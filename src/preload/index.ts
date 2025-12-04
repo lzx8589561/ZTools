@@ -8,8 +8,13 @@ export interface App {
 
 contextBridge.exposeInMainWorld('ztools', {
   getApps: () => ipcRenderer.invoke('get-apps'),
-  launch: (options: { path: string; type?: 'app' | 'plugin'; featureCode?: string; param?: any }) =>
-    ipcRenderer.invoke('launch', options),
+  launch: (options: {
+    path: string
+    type?: 'app' | 'plugin'
+    featureCode?: string
+    param?: any
+    name?: string
+  }) => ipcRenderer.invoke('launch', options),
   hideWindow: () => ipcRenderer.send('hide-window'),
   resizeWindow: (height: number) => ipcRenderer.send('resize-window', height),
   setWindowOpacity: (opacity: number) => ipcRenderer.send('set-window-opacity', opacity),
@@ -123,7 +128,13 @@ declare global {
   interface Window {
     ztools: {
       getApps: () => Promise<App[]>
-      launch: (path: string, param?: any) => Promise<void>
+      launch: (options: {
+        path: string
+        type?: 'app' | 'plugin'
+        featureCode?: string
+        param?: any
+        name?: string
+      }) => Promise<void>
       hideWindow: () => void
       resizeWindow: (height: number) => void
       setWindowOpacity: (opacity: number) => void
@@ -151,7 +162,11 @@ declare global {
       importPlugin: () => Promise<{ success: boolean; error?: string }>
       importDevPlugin: () => Promise<{ success: boolean; error?: string }>
       fetchPluginMarket: () => Promise<{ success: boolean; data?: any; error?: string }>
-      installPluginFromMarket: (plugin: any) => Promise<{ success: boolean; error?: string }>
+      installPluginFromMarket: (plugin: any) => Promise<{
+        success: boolean
+        error?: string
+        plugin?: any
+      }>
       deletePlugin: (pluginPath: string) => Promise<{ success: boolean; error?: string }>
       reloadPlugin: (pluginPath: string) => Promise<{ success: boolean; error?: string }>
       getRunningPlugins: () => Promise<string[]>

@@ -147,12 +147,14 @@ class APIManager {
       }
 
       let targetFeature: any = null
+      let targetCmdName: string = ''
       for (const feature of plugin.features || []) {
         if (feature.cmds && Array.isArray(feature.cmds)) {
           for (const cmd of feature.cmds) {
             const cmdLabel = typeof cmd === 'string' ? cmd : cmd.label
             if (cmdLabel === cmdName) {
               targetFeature = feature
+              targetCmdName = cmdLabel
               break
             }
           }
@@ -169,6 +171,7 @@ class APIManager {
         path: plugin.path,
         type: 'plugin' as const,
         featureCode: targetFeature.code,
+        name: targetCmdName, // 传递 cmd 名称
         param: { code: targetFeature.code }
       }
       console.log(`启动插件:`, launchOptions)

@@ -178,8 +178,9 @@ export class AppsAPI {
     type?: 'app' | 'plugin'
     featureCode?: string
     param?: any
+    name?: string // cmd 名称（用于历史记录显示）
   }): Promise<any> {
-    const { path, type, param } = options
+    const { path, type, param, name } = options
     let { featureCode } = options
     this.launchParam = param || {}
 
@@ -199,10 +200,10 @@ export class AppsAPI {
         // 插件启动参数中添加 featureCode
         this.launchParam.code = featureCode || ''
 
-        console.log('启动插件:', { path, featureCode })
+        console.log('启动插件:', { path, featureCode, name })
 
         // 添加到历史记录
-        await this.addToHistory({ path, type, featureCode, param })
+        await this.addToHistory({ path, type, featureCode, param, name })
 
         // 通知渲染进程准备显示插件占位区域
         this.mainWindow?.webContents.send('show-plugin-placeholder')
@@ -217,7 +218,7 @@ export class AppsAPI {
         await launchApp(path)
 
         // 添加到历史记录
-        await this.addToHistory({ path, type: 'app' })
+        await this.addToHistory({ path, type: 'app', name })
 
         // 通知渲染进程应用已启动（清空搜索框等）
         this.mainWindow?.webContents.send('app-launched')
@@ -238,9 +239,10 @@ export class AppsAPI {
     type?: 'app' | 'plugin'
     featureCode?: string
     param?: any
+    name?: string // cmd 名称（用于历史记录显示）
   }): Promise<void> {
     try {
-      const { path: appPath, type = 'app', featureCode, param } = options
+      const { path: appPath, type = 'app', featureCode, name: cmdName } = options
       const now = Date.now()
 
       // 获取应用/插件信息
@@ -263,7 +265,7 @@ export class AppsAPI {
             const feature = pluginConfig.features?.find((f: any) => f.code === featureCode)
 
             appInfo = {
-              name: pluginConfig.name,
+              name: cmdName || pluginConfig.name, // 优先使用传入的 cmd 名称
               path: appPath,
               icon: plugin.logo || '',
               type: 'plugin',
@@ -277,12 +279,12 @@ export class AppsAPI {
         }
       } else {
         // 从系统应用列表中查找
-        const apps = await this.getApps()
-        const app = apps.find((a: any) => a.path === appPath)
+        const cachedApps = await databaseAPI.dbGet('cached-apps')
+        const app = cachedApps?.find((a: any) => a.path === appPath)
 
         if (app) {
           appInfo = {
-            name: app.name,
+            name: cmdName || app.name, // 优先使用传入的 cmd 名称
             path: app.path,
             icon: app.icon,
             pinyin: app.pinyin,

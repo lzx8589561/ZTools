@@ -286,6 +286,7 @@ async function handleOpenPlugin(plugin: any): Promise<void> {
     const result = await window.ztools.launch({
       path: plugin.path,
       type: 'plugin',
+      name: plugin.name, // 传递插件名称
       param: {}
     })
 

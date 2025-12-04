@@ -9,7 +9,8 @@ declare global {
         type?: 'app' | 'plugin'
         featureCode?: string
         param?: any
-      }) => Promise<void>
+        name?: string
+      }) => Promise<any>
       hideWindow: () => void
       resizeWindow: (height: number) => void
       setWindowOpacity: (opacity: number) => void
@@ -36,7 +37,11 @@ declare global {
       importPlugin: () => Promise<{ success: boolean; error?: string }>
       importDevPlugin: () => Promise<{ success: boolean; error?: string }>
       fetchPluginMarket: () => Promise<{ success: boolean; data?: any; error?: string }>
-      installPluginFromMarket: (plugin: any) => Promise<{ success: boolean; error?: string }>
+      installPluginFromMarket: (plugin: any) => Promise<{
+        success: boolean
+        error?: string
+        plugin?: any
+      }>
       deletePlugin: (pluginPath: string) => Promise<{ success: boolean; error?: string }>
       reloadPlugin: (pluginPath: string) => Promise<{ success: boolean; error?: string }>
       getRunningPlugins: () => Promise<string[]>
@@ -60,7 +65,7 @@ declare global {
       ) => void
       onPluginClosed: (callback: () => void) => void
       onPluginsChanged: (callback: () => void) => void
-      onAppsChanged: (callback: (data: { type: 'add' | 'remove'; path: string }) => void) => void
+      onAppsChanged: (callback: () => void) => void
       onShowPluginPlaceholder: (callback: () => void) => void
       onShowSettings: (callback: () => void) => void
       onAppLaunched: (callback: () => void) => void
@@ -70,6 +75,7 @@ declare global {
           type?: 'app' | 'plugin'
           featureCode?: string
           param?: any
+          name?: string
         }) => void
       ) => void
       openPluginDevTools: () => Promise<{ success: boolean; error?: string }>

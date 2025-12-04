@@ -260,8 +260,8 @@ onMounted(async () => {
   })
 
   // 监听应用目录变化事件（用户安装或删除应用后自动刷新）
-  window.ztools.onAppsChanged(async (data) => {
-    console.log('应用目录发生变化:', data)
+  window.ztools.onAppsChanged(async () => {
+    console.log('应用目录发生变化，重新加载应用列表')
     // 重新加载应用列表
     await appDataStore.loadApps()
   })
