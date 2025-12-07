@@ -50,12 +50,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 上传平台产物（整个 dist 目录）
+      # 上传平台产物（只上传指定文件类型）
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifact-${{ matrix.os }}
-          path: dist/**
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
           if-no-files-found: warn
 
   release:
@@ -81,8 +84,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/**/*.exe
-            dist/**/*.dmg
-            dist/**/*.zip
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

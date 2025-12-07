@@ -1,6 +1,0 @@
-{
-    "downloadUrlWin64": "https://ilt.lanzouu.com/irVc93d0c4mf",
-    "downloadUrlMacArm": "https://ilt.lanzouu.com/irVc93d0c4md",
-    "version": "1.0.6",
-    "releaseNotes": "新版本测试"
-}

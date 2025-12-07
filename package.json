@@ -1,6 +1,6 @@
 {
   "name": "ztools",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
