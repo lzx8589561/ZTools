@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --bg-color: #ffffff4f;
+  --bg-color: #ffffff;
   --text-color: #111827;
   --text-secondary: #616161;
   --border-color: #e5e7eb;
@@ -31,6 +31,11 @@
   --danger-light-bg: #fee2e2;
   --danger-border: #fca5a5;
   --dialog-bg: #ffffff;
+}
+
+/* macOS 下使用透明背景 */
+.os-mac:root {
+  --bg-color: #ffffff4f;
 }
 
 /* 主题色定义 - 亮色模式 */
@@ -61,7 +66,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-color: #2d2d2d4f;
+    --bg-color: #2d2d2d;
     --text-color: #f3f4f6;
     --text-secondary: #bfc0c3;
     --border-color: #374151;
@@ -87,6 +92,11 @@
     --danger-light-bg: rgba(248, 113, 113, 0.2);
     --danger-border: rgba(248, 113, 113, 0.4);
     --dialog-bg: #2d2d2d;
+  }
+
+  /* macOS 暗色模式下使用透明背景 */
+  .os-mac:root {
+    --bg-color: #2d2d2d4f;
   }
 
   /* 主题色定义 - 暗色模式 */
