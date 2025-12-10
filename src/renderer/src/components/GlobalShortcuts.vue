@@ -2,7 +2,7 @@
   <div class="content-panel">
     <!-- 顶部添加按钮 -->
     <div class="panel-header">
-      <button class="add-btn" @click="showAddDialog">添加快捷键</button>
+      <button class="btn" @click="showAddDialog">添加快捷键</button>
     </div>
 
     <!-- 快捷键列表 -->
@@ -11,8 +11,8 @@
         <div class="shortcut-key">{{ shortcut.shortcut }}</div>
         <div class="shortcut-arrow">→</div>
         <div class="shortcut-target">{{ shortcut.target }}</div>
-        <button class="edit-btn" :disabled="isDeleting" @click="handleEdit(shortcut)">编辑</button>
-        <button class="delete-btn" :disabled="isDeleting" @click="handleDelete(shortcut.id)">
+        <button class="btn btn-sm" :disabled="isDeleting" @click="handleEdit(shortcut)">编辑</button>
+        <button class="btn btn-sm btn-danger" :disabled="isDeleting" @click="handleDelete(shortcut.id)">
           删除
         </button>
       </div>
@@ -34,7 +34,7 @@
           <!-- 快捷键录制 -->
           <div class="form-item">
             <label class="form-label">快捷键</label>
-            <div class="hotkey-input" :class="{ recording: isRecording }" @click="startRecording">
+            <div class="input hotkey-recorder" :class="{ recording: isRecording }" @click="startRecording">
               {{ displayHotkey }}
             </div>
             <span class="form-hint">点击上方输入框录制快捷键</span>
@@ -46,7 +46,7 @@
             <input
               v-model="targetCommand"
               type="text"
-              class="text-input"
+              class="input"
               placeholder="格式: 插件名称/指令名称，例如: 翻译/translate"
             />
             <span class="form-hint">格式: 插件名称/指令名称（支持动态指令）</span>
@@ -54,9 +54,9 @@
         </div>
 
         <div class="dialog-footer">
-          <button class="cancel-btn" @click="closeDialog">取消</button>
+          <button class="btn" @click="closeDialog">取消</button>
           <button
-            class="confirm-btn"
+            class="btn btn-solid"
             :disabled="!recordedShortcut || !targetCommand"
             @click="handleAdd"
           >
@@ -395,22 +395,6 @@ onUnmounted(() => {
   margin-bottom: 20px;
 }
 
-.add-btn {
-  padding: 8px 16px;
-  border: 1.5px solid var(--primary-color);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--primary-color);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.add-btn:hover {
-  background: var(--primary-light-bg);
-}
-
 /* 快捷键列表 */
 .shortcut-list {
   display: flex;
@@ -422,16 +406,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   padding: 16px;
-  background: var(--bg-color);
-  border: 1px solid var(--border-color);
+  background: var(--card-bg);
   border-radius: 8px;
   gap: 12px;
   transition: all 0.2s;
+  user-select: none;
 }
 
 .shortcut-item:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 2px 8px var(--shadow-color);
+  background: var(--hover-bg);
 }
 
 .shortcut-key {
@@ -460,51 +443,12 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-.edit-btn {
-  padding: 4px 12px;
-  border: 1px solid var(--primary-color);
-  border-radius: 4px;
-  background: var(--bg-color);
-  color: var(--primary-color);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
+.btn.btn-sm {
   margin-right: 8px;
 }
 
-.edit-btn:hover:not(:disabled) {
-  background: var(--primary-color);
-  color: var(--text-on-primary);
-}
-
-.edit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.delete-btn {
-  padding: 4px 12px;
-  border: 1px solid var(--danger-color);
-  border-radius: 4px;
-  background: var(--bg-color);
-  color: var(--danger-color);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.delete-btn:hover:not(:disabled) {
-  background: var(--danger-color);
-  color: var(--text-on-primary);
-}
-
-.delete-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.btn.btn-sm:last-child {
+  margin-right: 0;
 }
 
 /* 空状态 */
@@ -562,7 +506,7 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--text-color);
   padding: 20px 24px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--divider-color);
   margin: 0;
 }
 
@@ -593,26 +537,14 @@ onUnmounted(() => {
   margin-top: 6px;
 }
 
-.hotkey-input {
-  width: 100%;
-  padding: 10px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
+.hotkey-recorder {
   font-weight: 500;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s;
-  background: var(--input-bg);
-  color: var(--text-color);
 }
 
-.hotkey-input:hover {
-  border-color: var(--primary-color);
-}
-
-.hotkey-input.recording {
-  border-color: var(--primary-color);
+.hotkey-recorder.recording {
+  border-color: color-mix(in srgb, var(--primary-color), black 15%);
   background: var(--primary-light-bg);
   color: var(--primary-color);
   animation: pulse 1.5s infinite;
@@ -628,71 +560,12 @@ onUnmounted(() => {
   }
 }
 
-.text-input {
-  width: 100%;
-  padding: 10px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.2s;
-  outline: none;
-  background: var(--input-bg);
-  color: var(--text-color);
-}
-
-.text-input:focus {
-  border-color: var(--primary-color);
-  background: var(--input-focus-bg);
-}
-
-.text-input::placeholder {
-  color: var(--placeholder-color);
-}
-
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--divider-color);
 }
 
-.cancel-btn {
-  padding: 8px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-color);
-  color: var(--text-secondary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancel-btn:hover {
-  background: var(--hover-bg);
-  border-color: var(--border-color);
-  color: var(--text-color);
-}
-
-.confirm-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background: var(--primary-color);
-  color: var(--text-on-primary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.confirm-btn:hover:not(:disabled) {
-  background: var(--primary-hover);
-}
-
-.confirm-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 </style>

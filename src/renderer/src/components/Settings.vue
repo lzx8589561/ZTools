@@ -36,12 +36,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import Icon from './Icon.vue'
+import DataManagement from './DataManagement.vue'
 import GeneralSettings from './GeneralSettings.vue'
+import GlobalShortcuts from './GlobalShortcuts.vue'
+import Icon from './Icon.vue'
 import PluginCenter from './PluginCenter.vue'
 import PluginMarket from './PluginMarket.vue'
-import DataManagement from './DataManagement.vue'
-import GlobalShortcuts from './GlobalShortcuts.vue'
 
 // 菜单项类型
 interface MenuItem {
@@ -72,7 +72,7 @@ const activeMenu = ref('general')
 /* 左侧菜单 */
 .settings-sidebar {
   width: 200px;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--divider-color);
   padding: 12px 8px;
 }
 

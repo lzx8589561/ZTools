@@ -1,13 +1,15 @@
 <template>
   <div class="app-container">
     <div class="search-window">
-      <SearchBox
-        ref="searchBoxRef"
-        v-model="searchQuery"
-        :current-view="currentView"
-        @composing="handleComposing"
-        @settings-click="handleSettingsClick"
-      />
+      <div :class="['search-box-wrapper', { 'with-divider': currentView === ViewMode.Plugin }]">
+        <SearchBox
+          ref="searchBoxRef"
+          v-model="searchQuery"
+          :current-view="currentView"
+          @composing="handleComposing"
+          @settings-click="handleSettingsClick"
+        />
+      </div>
 
       <!-- 搜索结果组件 -->
       <SearchResults
@@ -357,6 +359,14 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background: var(--bg-color);
+}
+
+.search-box-wrapper {
+  flex-shrink: 0;
+}
+
+.search-box-wrapper.with-divider {
+  border-bottom: 1px solid var(--divider-color);
 }
 
 .plugin-placeholder {

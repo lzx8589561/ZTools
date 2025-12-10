@@ -27,28 +27,41 @@
             <template v-if="plugin.installed">
               <button
                 v-if="canUpgrade(plugin)"
-                class="action-btn upgrade"
+                class="btn btn-md btn-warning"
                 :disabled="installingPlugin === plugin.name"
                 @click.stop="handleUpgradePlugin(plugin)"
               >
                 <span v-if="installingPlugin === plugin.name">...</span>
                 <span v-else>升级</span>
               </button>
-              <button v-else class="action-btn installed" @click.stop="handleOpenPlugin(plugin)">
-                打开
+              <button v-else class="icon-btn open-btn" title="打开" @click.stop="handleOpenPlugin(plugin)">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
               </button>
             </template>
             <button
               v-else
-              class="action-btn download"
+              class="icon-btn download-btn"
+              title="下载"
               :disabled="installingPlugin === plugin.name"
               @click.stop="downloadPlugin(plugin)"
             >
               <span v-if="installingPlugin === plugin.name">...</span>
               <svg
                 v-else
-                width="16"
-                height="16"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -95,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import PluginDetail from './PluginDetail.vue'
 
 interface Plugin {
@@ -326,35 +339,34 @@ onMounted(() => {
 .market-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .plugin-card {
   display: flex;
   align-items: center;
-  padding: 10px;
-  background: var(--bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  padding: 12px;
+  background: var(--card-bg);
+  border-radius: 8px;
   transition: all 0.2s;
   cursor: pointer;
   min-width: 0;
+  user-select: none;
 }
 
 .plugin-card:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--hover-bg);
 }
 
 .plugin-icon {
   flex-shrink: 0;
-  margin-right: 16px;
+  margin-right: 12px;
 }
 
 .plugin-logo-img {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
   object-fit: cover;
 }
 
@@ -364,19 +376,17 @@ onMounted(() => {
 }
 
 .plugin-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-color);
   margin-bottom: 4px;
-  cursor: pointer;
-}
-
-.plugin-name:hover {
-  color: var(--primary-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .plugin-description {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -385,65 +395,24 @@ onMounted(() => {
 
 .plugin-action {
   flex-shrink: 0;
-  margin-left: 12px;
+  margin-left: 10px;
 }
 
-.action-btn {
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.action-btn.installed {
-  padding: 4px 12px;
-  border: 1px solid var(--primary-color);
-  border-radius: 4px;
-  background: var(--bg-color);
+/* 图标按钮颜色样式 */
+.open-btn {
   color: var(--primary-color);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
 }
 
-.action-btn.installed:hover {
-  background: var(--primary-color);
-  color: var(--text-on-primary);
+.open-btn:hover:not(:disabled) {
+  background: var(--primary-light-bg);
 }
 
-.action-btn.upgrade {
-  padding: 4px 12px;
-  border: 1px solid #e6a23c;
-  border-radius: 4px;
-  background: var(--bg-color);
-  color: #e6a23c;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.action-btn.upgrade:hover {
-  background: #e6a23c;
-  color: white;
-}
-
-.action-btn.download {
-  color: var(--text-secondary);
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-btn.download:hover {
+.download-btn {
   color: var(--primary-color);
-  background: var(--hover-bg);
+}
+
+.download-btn:hover:not(:disabled) {
+  background: var(--primary-light-bg);
 }
 
 .loading-state {

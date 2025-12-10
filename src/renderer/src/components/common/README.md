@@ -67,5 +67,6 @@ const isExpanded = ref(false)
 
 1. 在此目录创建 `.vue` 文件，使用 PascalCase 命名
 2. 使用 TypeScript + `<script setup>` 语法
-3. 在本 README 添加组件说明和用法示例
+3. 优先使用项目根目录 `CONTROL_GUIDE.md` 中定义的通用样式类
+4. 在本 README 添加组件说明和用法示例
 

@@ -204,7 +204,6 @@ defineExpose({
 <style scoped>
 .search-box {
   padding: 5px 15px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -244,8 +243,16 @@ defineExpose({
 }
 
 .search-input::placeholder {
-  color: var(--placeholder-color);
-  font-size: 22px;
+  color: #7a7a7a;
+  font-size: 24px;
+  font-weight: 300;
+}
+
+/* 暗色模式下的 placeholder 颜色 */
+@media (prefers-color-scheme: dark) {
+  .search-input::placeholder {
+    color: #aaaaaa;
+  }
 }
 
 .search-input-container {

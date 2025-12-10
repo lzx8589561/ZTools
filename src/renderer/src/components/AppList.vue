@@ -94,10 +94,10 @@ interface App {
 }
 
 const props = withDefaults(
-  defineProps<{
-    apps: App[]
-    selectedIndex: number
-    emptyText?: string
+defineProps<{
+  apps: App[]
+  selectedIndex: number
+  emptyText?: string
     draggable?: boolean
   }>(),
   {

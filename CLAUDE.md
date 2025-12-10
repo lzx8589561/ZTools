@@ -643,6 +643,12 @@ updater 重启应用
 - `src/main/api/plugin/` - 插件可用的所有 API 实现
 - `resources/preload.js` - 插件可用的 API（注入到插件上下文）
 
+### 修改 UI 组件和样式
+
+- `src/renderer/src/style.css` - 全局样式和通用控件类（按钮、输入框、开关、卡片等）
+- `src/renderer/src/components/` - Vue 组件（应优先使用通用控件类）
+- 参考"UI 组件开发（控件样式系统）"章节了解可用的控件类
+
 ### 修改搜索逻辑
 
 - `src/renderer/src/stores/appDataStore.ts` - 搜索引擎和数据加载
@@ -849,6 +855,190 @@ class APIManager {
 - 修改后需要重启应用才能生效
 - 无界面插件开发指南已整合到本文档的"开发无界面插件"章节
 
+### UI 组件开发（控件样式系统）
+
+项目在 `src/renderer/src/style.css` 中定义了一套完整的通用控件样式类，遵循以下设计原则：
+
+1. **默认低调**：所有控件默认使用中性色（`--control-bg` 和 `--control-border`）
+2. **悬浮高亮**：鼠标悬浮时显示对应的主题色反馈
+3. **类型区分**：根据操作类型使用不同的颜色语义
+4. **一致性**：所有控件遵循相同的视觉语言和交互模式
+
+#### 可用的控件类
+
+**1. 按钮 `.btn`**
+
+```vue
+<!-- 基础用法 -->
+<button class="btn">默认按钮</button>
+
+<!-- 尺寸变体 -->
+<button class="btn btn-sm">小按钮</button>    <!-- padding: 4px 12px, font-size: 12px -->
+<button class="btn btn-md">中按钮</button>    <!-- padding: 6px 14px, font-size: 13px -->
+<button class="btn btn-lg">大按钮</button>    <!-- padding: 10px 20px, font-size: 15px -->
+
+<!-- 类型变体（悬浮时显示对应颜色）-->
+<button class="btn btn-primary">主要操作</button>   <!-- 蓝色/主题色 -->
+<button class="btn btn-danger">删除操作</button>    <!-- 红色 -->
+<button class="btn btn-warning">警告操作</button>   <!-- 黄色 -->
+<button class="btn btn-success">成功操作</button>   <!-- 绿色 -->
+<button class="btn btn-purple">特殊操作</button>    <!-- 紫色 -->
+
+<!-- 实心按钮（默认就显示主题色背景）-->
+<button class="btn btn-solid">确认</button>
+
+<!-- 组合使用 -->
+<button class="btn btn-sm btn-danger">删除</button>
+<button class="btn btn-lg btn-solid">确认</button>
+```
+
+**图标按钮变体**：
+
+项目提供两种图标按钮样式，适用于不同场景：
+
+**`.btn-icon`** - 32x32 有边框图标按钮
+```vue
+<button class="btn btn-icon" title="重置">
+  <svg width="20" height="20">...</svg>
+</button>
+```
+- 尺寸：32x32px
+- 样式：有边框、有背景色
+- 用途：通用设置、详情页等需要明显按钮的场景
+- 图标建议尺寸：18-20px
+
+**`.icon-btn`** - 28x28 透明背景图标按钮
+```vue
+<button class="icon-btn open-btn" title="打开">
+  <svg width="14" height="14">...</svg>
+</button>
+```
+- 尺寸：28x28px
+- 样式：无边框、透明背景（悬浮时显示背景）
+- 用途：列表操作、插件市场等紧凑场景
+- 图标建议尺寸：14px
+- 需要自定义颜色样式（如 `.open-btn`、`.download-btn`）
+
+**2. 输入框 `.input`**
+
+```vue
+<input type="text" class="input" placeholder="请输入..." />
+```
+
+状态：
+- 默认：中性色背景和边框
+- 悬浮：`--hover-bg` 背景
+- 聚焦：`--primary-color` 边框 + `--primary-light-bg` 背景
+
+**3. 下拉框 `.select`**
+
+```vue
+<select class="select">
+  <option value="1">选项1</option>
+  <option value="2">选项2</option>
+</select>
+```
+
+特性：自动适配亮色/暗色主题，悬浮和聚焦时显示主题色
+
+**4. 开关 `.toggle`**
+
+```vue
+<label class="toggle">
+  <input type="checkbox" v-model="enabled" />
+  <span class="toggle-slider"></span>
+</label>
+```
+
+特性：悬浮时 handle 会放大 1.15 倍，激活时显示主题色，平滑动画过渡
+
+**5. 卡片 `.card`**
+
+```vue
+<div class="card">卡片内容</div>
+<div class="card clickable">可点击的卡片</div>
+```
+
+修饰符：`.clickable` - 添加指针光标和点击效果
+
+#### 开发步骤
+
+**1. 优先使用通用类**
+
+直接使用已定义的类，无需编写自定义样式：
+
+```vue
+<template>
+  <button class="btn btn-primary">提交</button>
+  <input type="text" class="input" placeholder="用户名" />
+  <label class="toggle">
+    <input type="checkbox" v-model="autoSave" />
+    <span class="toggle-slider"></span>
+  </label>
+</template>
+```
+
+**2. 需要自定义时**
+
+在组件内添加 scoped 样式：
+
+```vue
+<template>
+  <button class="btn my-special-btn">特殊按钮</button>
+</template>
+
+<style scoped>
+.my-special-btn {
+  /* 在通用样式基础上添加自定义样式 */
+  min-width: 120px;
+}
+</style>
+```
+
+**3. 扩展通用类**
+
+如果新样式有通用性，添加到 `src/renderer/src/style.css`：
+
+```css
+/* 在 style.css 中添加 */
+.btn-icon {
+  padding: 8px;
+  min-width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+```
+
+#### CSS 变量参考
+
+**控件相关**：
+- `--control-bg` - 控件默认背景色
+- `--control-border` - 控件默认边框色
+- `--hover-bg` - 悬浮时的背景色
+- `--primary-light-bg` - 主题色浅背景（聚焦/激活状态）
+
+**主题色**：
+- `--primary-color` - 当前主题色（可动态切换）
+- `--primary-hover` - 主题色悬浮态（自动计算）
+- `--danger-color` / `--warning-color` / `--success-color` / `--purple-color`
+
+**浅背景色**（用于按钮悬浮）：
+- `--primary-light-bg` / `--danger-light-bg` / `--warning-light-bg` / `--success-light-bg` / `--purple-light-bg`
+
+**文本和其他**：
+- `--text-color` - 主要文本颜色
+- `--text-secondary` - 次要文本颜色
+- `--text-on-primary` - 主题色上的文本颜色（白色）
+- `--card-bg` - 卡片背景色
+- `--divider-color` - 分割线颜色
+
+**重要提醒**：
+- 不要在组件中重复定义控件样式，应该使用通用类
+- 保持一致性，所有新增控件应遵循相同的视觉和交互模式
+- 所有控件自动适配亮色/暗色主题
+- 确保控件有清晰的悬浮、聚焦、禁用状态
+
 ### 开发无界面插件
 
 无界面插件使用 **WebContentsView 加载空白页面** 方案实现，与 UI 插件共享相同的架构和 API。
@@ -974,6 +1164,16 @@ window.exports = {
 - 主进程和 preload 的类型检查是分开的（`npm run typecheck:node`）
 - 渲染进程类型检查（`npm run typecheck:web`）
 - `env.d.ts` 需要与 `preload/index.ts` 保持同步
+- **禁止使用 `any` 类型**，优先使用具体类型或泛型
+
+### UI 开发规范
+
+- **优先使用通用控件类**（`.btn`、`.input`、`.select`、`.toggle`、`.card`、`.btn-icon`、`.icon-btn`）
+- **图标按钮选择**：详情页/设置页用 `.btn-icon`（32x32），列表/紧凑场景用 `.icon-btn`（28x28）
+- 不要在组件中重复定义控件样式
+- 保持视觉和交互的一致性
+- 所有控件自动适配亮色/暗色主题
+- 使用简洁的语法（可选链操作符 `?.` 而非繁琐的 `if` 判断）
 
 ### 插件缓存管理
 

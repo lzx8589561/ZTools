@@ -2,7 +2,7 @@
   <!-- 覆盖内容区的详情面板（无遮罩） -->
   <div class="plugin-detail-panel">
     <div class="detail-topbar">
-      <button class="back-btn" aria-label="返回" title="返回" @click="emit('back')">
+      <button class="icon-btn back-btn" aria-label="返回" title="返回" @click="emit('back')">
         <Icon name="back" size="18" />
       </button>
       <div class="topbar-title">插件详情</div>
@@ -21,18 +21,47 @@
             <template v-if="plugin.installed">
               <button
                 v-if="canUpgrade"
-                class="upgrade-btn"
+                class="btn btn-md btn-warning"
                 :disabled="isLoading"
                 @click="emit('upgrade')"
               >
                 <span v-if="isLoading" class="loading-spinner"></span>
                 <span v-else>升级到 v{{ plugin.version }}</span>
               </button>
-              <button v-else class="open-btn" @click="emit('open')">打开</button>
+              <button v-else class="btn btn-md" @click="emit('open')">打开</button>
             </template>
-            <button v-else class="download-btn" :disabled="isLoading" @click="emit('download')">
+            <button v-else class="btn btn-icon" title="下载" :disabled="isLoading" @click="emit('download')">
               <span v-if="isLoading" class="loading-spinner"></span>
-              <span v-else>下载</span>
+              <svg
+                v-else
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M7 10L12 15L17 10"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M12 15V3"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </button>
           </div>
         </div>
@@ -163,26 +192,7 @@ function cmdTypeBadge(cmd: any): string {
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.back-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--bg-color);
-  color: var(--text-color);
-  font-size: 18px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.back-btn:hover {
-  background: var(--hover-bg);
+  border-bottom: 1px solid var(--divider-color);
 }
 
 .topbar-title {
@@ -211,61 +221,8 @@ function cmdTypeBadge(cmd: any): string {
   margin-left: auto;
 }
 
-.open-btn {
-  padding: 6px 16px;
-  border: 1px solid var(--primary-color);
-  border-radius: 6px;
-  background: var(--bg-color);
-  color: var(--primary-color);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.open-btn:hover {
-  background: var(--primary-color);
-  color: var(--text-on-primary);
-}
-
-.download-btn {
-  padding: 6px 16px;
-  border: 1px solid var(--primary-color);
-  border-radius: 6px;
-  background: var(--bg-color);
-  color: var(--primary-color);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.download-btn:hover:not(:disabled) {
-  background: var(--primary-color);
-  color: var(--text-on-primary);
-}
-
-.upgrade-btn {
-  padding: 6px 16px;
-  border: 1px solid var(--warning-color);
-  border-radius: 6px;
-  background: var(--bg-color);
-  color: var(--warning-color);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.upgrade-btn:hover:not(:disabled) {
-  background: var(--warning-color);
-  color: var(--text-on-primary);
-}
-
-.download-btn:disabled,
-.upgrade-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.detail-actions .btn {
+  min-width: 60px;
 }
 
 .loading-spinner {
@@ -350,16 +307,14 @@ function cmdTypeBadge(cmd: any): string {
 }
 
 .feature-item {
-  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px;
-  background: var(--bg-color);
+  background: var(--card-bg);
   transition: all 0.2s;
 }
 
 .feature-item:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 2px 8px var(--shadow-color);
+  background: var(--hover-bg);
 }
 
 .feature-title {
@@ -420,5 +375,15 @@ function cmdTypeBadge(cmd: any): string {
   font-size: 13px;
   color: var(--text-secondary);
   padding: 12px;
+}
+
+/* 图标按钮颜色样式 */
+.back-btn {
+  color: var(--text-color);
+}
+
+.back-btn:hover:not(:disabled) {
+  background: var(--hover-bg);
+  color: var(--primary-color);
 }
 </style>

@@ -4,10 +4,10 @@
     <div v-show="!isDetailVisible" class="scrollable-content">
       <div class="panel-header">
         <div class="button-group">
-          <button class="import-btn dev" :disabled="isImportingDev" @click="importDevPlugin">
+          <button class="btn btn-purple" :disabled="isImportingDev" @click="importDevPlugin">
             {{ isImportingDev ? '添加中...' : '添加开发中插件' }}
           </button>
-          <button class="import-btn" :disabled="isImporting" @click="importPlugin">
+          <button class="btn" :disabled="isImporting" @click="importPlugin">
             {{ isImporting ? '导入中...' : '导入本地插件' }}
           </button>
         </div>
@@ -151,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAppDataStore } from '../stores/appDataStore'
 import PluginDetail from './PluginDetail.vue'
 
@@ -406,36 +406,6 @@ function closePluginDetail(): void {
   gap: 10px;
 }
 
-.import-btn {
-  padding: 8px 16px;
-  border: 1.5px solid var(--primary-color);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--primary-color);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.import-btn.dev {
-  border-color: var(--purple-color);
-  color: var(--purple-color);
-}
-
-.import-btn:hover:not(:disabled) {
-  background: var(--primary-light-bg);
-}
-
-.import-btn.dev:hover:not(:disabled) {
-  background: var(--purple-light-bg);
-}
-
-.import-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .plugin-list {
   display: flex;
   flex-direction: column;
@@ -446,16 +416,15 @@ function closePluginDetail(): void {
   display: flex;
   align-items: center;
   padding: 10px 12px;
-  background: var(--bg-color);
-  border: 1px solid var(--border-color);
+  background: var(--card-bg);
   border-radius: 8px;
   transition: all 0.2s;
   cursor: pointer;
+  user-select: none;
 }
 
 .plugin-item:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 2px 8px var(--shadow-color);
+  background: var(--hover-bg);
 }
 
 .plugin-icon,
@@ -559,27 +528,7 @@ function closePluginDetail(): void {
   gap: 6px;
 }
 
-/* 图标按钮通用样式 */
-.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.icon-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
+/* 图标按钮颜色样式 */
 .open-btn {
   color: var(--primary-color);
 }

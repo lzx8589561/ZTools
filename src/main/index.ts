@@ -1,9 +1,9 @@
-import { app, BrowserWindow } from 'electron'
 import { platform } from '@electron-toolkit/utils'
+import { app, BrowserWindow } from 'electron'
 import api from './api/index'
+import appWatcher from './appWatcher'
 import pluginManager from './pluginManager'
 import windowManager from './windowManager'
-import appWatcher from './appWatcher'
 
 // 开发模式下禁用某些警告
 if (process.env.NODE_ENV !== 'production') {

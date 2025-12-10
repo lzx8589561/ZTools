@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import Icon from './Icon.vue'
 
 interface PluginData {
@@ -271,7 +271,7 @@ onMounted(() => {
 }
 
 .plugin-item:hover {
-  border-color: var(--primary-color);
+  border-color: color-mix(in srgb, var(--primary-color), black 15%);
   box-shadow: 0 2px 8px var(--shadow-color);
 }
 
@@ -370,7 +370,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--divider-color);
 }
 
 .modal-header h3 {
@@ -438,8 +438,7 @@ onMounted(() => {
 
 .doc-item {
   padding: 12px 16px;
-  background: var(--bg-color);
-  border: 1px solid var(--border-color);
+  background: var(--card-bg);
   border-radius: 8px;
   cursor: pointer;
   font-family: 'Monaco', 'Menlo', monospace;
@@ -447,6 +446,7 @@ onMounted(() => {
   color: var(--text-primary);
   transition: all 0.2s;
   display: flex;
+  user-select: none;
   justify-content: space-between;
   align-items: center;
 }
@@ -478,13 +478,12 @@ onMounted(() => {
 }
 
 .doc-item:hover {
-  border-color: var(--primary-color);
   background: var(--hover-bg);
 }
 
 .doc-item.active {
-  border-color: var(--primary-color);
-  background: var(--active-bg);
+  background: var(--hover-bg);
+  box-shadow: inset 0 0 0 1px var(--primary-color);
 }
 
 .doc-key-display {

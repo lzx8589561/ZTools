@@ -10,7 +10,11 @@
         <div class="hotkey-input" :class="{ recording: isRecording }" @click="startRecording">
           {{ displayHotkey }}
         </div>
-        <button v-if="hotkey !== defaultHotkey" class="reset-btn" @click="resetHotkey">重置</button>
+        <button v-if="hotkey !== defaultHotkey" class="btn btn-icon" title="重置" @click="resetHotkey">
+          <svg width="20" height="20" viewBox="1 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14.5 9C14.5 11.4853 12.4853 13.5 10 13.5C7.51472 13.5 5.5 11.4853 5.5 9C5.5 6.51472 7.51472 4.5 10 4.5C11.6569 4.5 13.0943 5.41421 13.8536 6.75M14 4V7H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -18,7 +22,7 @@
     <div class="setting-item">
       <div class="setting-label">
         <span>窗口不透明度</span>
-        <span class="setting-desc">调整窗口的透明度（{{ Math.round(opacity * 100) }}%）</span>
+        <span class="setting-desc">调整窗口的透明度</span>
       </div>
       <div class="setting-control opacity-control">
         <input
@@ -30,6 +34,7 @@
           class="opacity-slider"
           @input="handleOpacityChange"
         />
+        <span class="opacity-value">{{ Math.round(opacity * 100) }}%</span>
       </div>
     </div>
 
@@ -40,7 +45,7 @@
         <span class="setting-desc">选择应用的主题外观</span>
       </div>
       <div class="setting-control">
-        <select v-model="windowStore.theme" class="select-input" @change="handleThemeChange">
+        <select v-model="windowStore.theme" class="select" @change="handleThemeChange">
           <option value="system">跟随系统</option>
           <option value="light">明亮</option>
           <option value="dark">暗黑</option>
@@ -64,6 +69,27 @@
           :title="color.label"
           @click="handlePrimaryColorChange(color.value)"
         ></div>
+        <div
+          class="color-option custom-color-option"
+          :class="{ active: windowStore.primaryColor === 'custom' }"
+          :style="{ backgroundColor: customColor }"
+          title="自定义"
+          @click="handleSelectCustomColor"
+        ></div>
+        <button
+          v-if="windowStore.primaryColor === 'custom'"
+          class="btn btn-sm"
+          @click="openColorPicker"
+        >
+          自定义
+        </button>
+        <input
+          ref="colorPickerInput"
+          type="color"
+          :value="customColor"
+          class="color-picker-hidden"
+          @input="handleCustomColorChange"
+        />
       </div>
     </div>
 
@@ -77,7 +103,7 @@
         <input
           v-model="windowStore.placeholder"
           type="text"
-          class="text-input"
+          class="input"
           placeholder="输入提示文字"
           @blur="handlePlaceholderChange"
           @keyup.enter="handlePlaceholderChange"
@@ -98,13 +124,16 @@
           class="avatar-preview"
           alt="头像预览"
         />
-        <button class="select-btn" @click="handleSelectAvatar">选择图片</button>
+        <button class="btn" @click="handleSelectAvatar">选择图片</button>
         <button
           v-if="windowStore.avatar !== defaultAvatar"
-          class="reset-btn"
+          class="btn btn-icon"
+          title="重置"
           @click="handleResetAvatar"
         >
-          重置
+          <svg width="20" height="20" viewBox="1 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14.5 9C14.5 11.4853 12.4853 13.5 10 13.5C7.51472 13.5 5.5 11.4853 5.5 9C5.5 6.51472 7.51472 4.5 10 4.5C11.6569 4.5 13.0943 5.41421 13.8536 6.75M14 4V7H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -118,7 +147,7 @@
       <div class="setting-control">
         <select
           v-model="windowStore.autoPaste"
-          class="select-input"
+          class="select"
           @change="handleAutoPasteChange"
         >
           <option value="off">关闭</option>
@@ -137,13 +166,13 @@
         <span class="setting-desc">当窗口失去焦点时自动隐藏</span>
       </div>
       <div class="setting-control">
-        <label class="switch">
+        <label class="toggle">
           <input
             v-model="windowStore.hideOnBlur"
             type="checkbox"
             @change="handleHideOnBlurChange"
           />
-          <span class="slider"></span>
+          <span class="toggle-slider"></span>
         </label>
       </div>
     </div>
@@ -155,9 +184,9 @@
         <span class="setting-desc">在系统托盘中显示应用图标</span>
       </div>
       <div class="setting-control">
-        <label class="switch">
+        <label class="toggle">
           <input v-model="showTrayIcon" type="checkbox" @change="handleTrayIconChange" />
-          <span class="slider"></span>
+          <span class="toggle-slider"></span>
         </label>
       </div>
     </div>
@@ -169,9 +198,9 @@
         <span class="setting-desc">登录系统时自动启动应用</span>
       </div>
       <div class="setting-control">
-        <label class="switch">
+        <label class="toggle">
           <input v-model="launchAtLogin" type="checkbox" @change="handleLaunchAtLoginChange" />
-          <span class="slider"></span>
+          <span class="toggle-slider"></span>
         </label>
       </div>
     </div>
@@ -188,7 +217,7 @@
         </div>
       </div>
       <div class="setting-control">
-        <button class="select-btn" :disabled="isCheckingUpdate" @click="handleCheckUpdate">
+        <button class="btn" :disabled="isCheckingUpdate" @click="handleCheckUpdate">
           {{ isCheckingUpdate ? '检查中...' : '检查更新' }}
         </button>
       </div>
@@ -197,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useWindowStore } from '../stores/windowStore'
 
 const windowStore = useWindowStore()
@@ -216,6 +245,9 @@ const showTrayIcon = ref(true)
 // 开机启动设置
 const launchAtLogin = ref(false)
 
+// 颜色选择器引用
+const colorPickerInput = ref<HTMLInputElement | null>(null)
+
 // 软件版本
 const appVersion = ref('')
 const versions = ref({ electron: '', node: '', chrome: '' })
@@ -227,9 +259,11 @@ const themeColors = [
   { label: '罗兰紫', value: 'purple', hex: '#7c3aed' },
   { label: '翡翠绿', value: 'green', hex: '#059669' },
   { label: '活力橙', value: 'orange', hex: '#ea580c' },
-  { label: '宝石红', value: 'red', hex: '#dc2626' },
-  { label: '少女粉', value: 'pink', hex: '#db2777' }
+  { label: '宝石红', value: 'red', hex: '#dc2626' }
 ]
+
+// 自定义颜色
+const customColor = ref('#db2777')
 
 // 头像默认值（用于重置）
 const defaultAvatar = new URL('../asserts/image/default.png', import.meta.url).href
@@ -452,6 +486,39 @@ async function handlePrimaryColorChange(color: string): Promise<void> {
   }
 }
 
+// 选择自定义颜色（不打开色盘）
+async function handleSelectCustomColor(): Promise<void> {
+  try {
+    windowStore.updatePrimaryColor('custom')
+    // 重新应用自定义颜色，触发智能调整
+    windowStore.updateCustomColor(customColor.value)
+    await saveSettings()
+    console.log('已选择自定义主题色，颜色已智能调整')
+  } catch (error) {
+    console.error('选择自定义主题色失败:', error)
+  }
+}
+
+// 打开颜色选择器
+function openColorPicker(): void {
+  colorPickerInput.value?.click()
+}
+
+// 处理自定义颜色变化
+async function handleCustomColorChange(event: Event): Promise<void> {
+  const target = event.target as HTMLInputElement
+  const color = target.value
+  customColor.value = color
+  
+  try {
+    windowStore.updateCustomColor(color)
+    await saveSettings()
+    console.log('自定义主题色已更新:', color)
+  } catch (error) {
+    console.error('更新自定义主题色失败:', error)
+  }
+}
+
 // 处理托盘图标显示变化
 async function handleTrayIconChange(): Promise<void> {
   try {
@@ -541,6 +608,11 @@ async function loadSettings(): Promise<void> {
       if (data.avatar) {
         windowStore.updateAvatar(data.avatar)
       }
+      
+      // 加载自定义颜色
+      if (data.customColor) {
+        customColor.value = data.customColor
+      }
     }
 
     // 获取当前实际注册的快捷键
@@ -569,6 +641,7 @@ async function saveSettings(): Promise<void> {
       hideOnBlur: windowStore.hideOnBlur,
       theme: windowStore.theme,
       primaryColor: windowStore.primaryColor,
+      customColor: customColor.value,
       showTrayIcon: showTrayIcon.value
     })
   } catch (error) {
@@ -615,7 +688,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--divider-color);
 }
 
 .setting-label {
@@ -658,24 +731,26 @@ onMounted(() => {
 .hotkey-input {
   min-width: 150px;
   padding: 8px 16px;
-  border: 2px solid var(--border-color);
+  border: 2px solid var(--control-border);
   border-radius: 6px;
+  background: var(--control-bg);
+  color: var(--text-color);
   font-size: 14px;
   font-weight: 500;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
-  background: var(--input-bg);
-  color: var(--text-color);
+  user-select: none;
 }
 
 .hotkey-input:hover {
-  border-color: var(--primary-color);
+  background: var(--hover-bg);
+  border-color: color-mix(in srgb, var(--primary-color), black 15%);
 }
 
 .hotkey-input.recording {
-  border-color: var(--primary-color);
-  background: var(--active-bg);
+  border-color: color-mix(in srgb, var(--primary-color), black 15%);
+  background: var(--primary-light-bg);
   color: var(--primary-color);
   animation: pulse 1.5s infinite;
 }
@@ -690,27 +765,18 @@ onMounted(() => {
   }
 }
 
-/* 重置按钮 */
-.reset-btn {
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: var(--input-bg);
-  color: var(--text-secondary);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.reset-btn:hover {
-  background: var(--hover-bg);
-  border-color: var(--border-color);
-  color: var(--text-color);
-}
-
 /* 不透明度控制 */
 .opacity-control {
   min-width: 250px;
+  gap: 12px;
+}
+
+.opacity-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  min-width: 45px;
+  text-align: right;
 }
 
 .opacity-slider {
@@ -719,87 +785,69 @@ onMounted(() => {
   appearance: none;
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(to right, var(--border-color) 0%, var(--primary-color) 100%);
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
   outline: none;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.opacity-slider:hover {
+  background: var(--hover-bg);
+  border-color: color-mix(in srgb, var(--primary-color), black 15%);
 }
 
 .opacity-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--primary-color);
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 4px var(--shadow-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
 }
 
 .opacity-slider::-webkit-slider-thumb:hover {
   background: var(--primary-hover);
-  transform: scale(1.1);
+  transform: scale(1.15);
+}
+
+.opacity-slider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
 }
 
 .opacity-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--primary-color);
   cursor: pointer;
-  border: none;
+  border: 2px solid white;
   transition: all 0.2s;
-  box-shadow: 0 2px 4px var(--shadow-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .opacity-slider::-moz-range-thumb:hover {
   background: var(--primary-hover);
-  transform: scale(1.1);
+  transform: scale(1.15);
+}
+
+.opacity-slider::-moz-range-thumb:active {
+  transform: scale(1.05);
 }
 
 /* 文本输入框 */
-.text-input {
+.input {
   min-width: 250px;
   padding: 8px 12px;
-  border: 2px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.2s;
-  outline: none;
-  background: var(--input-bg);
-  color: var(--text-color);
 }
 
-.text-input:focus {
-  border-color: var(--primary-color);
-  background: var(--input-focus-bg);
-}
-
-.text-input::placeholder {
-  color: var(--placeholder-color);
-}
-
-/* 下拉选择框 */
-.select-input {
+.select {
   min-width: 150px;
   padding: 8px 12px;
-  border: 2px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
-  background: var(--input-bg);
-  color: var(--text-color);
-  cursor: pointer;
-  transition: all 0.2s;
-  outline: none;
-}
-
-.select-input:hover {
-  border-color: var(--primary-color);
-}
-
-.select-input:focus {
-  border-color: var(--primary-color);
-  background: var(--input-focus-bg);
 }
 
 /* 头像控制 */
@@ -817,73 +865,6 @@ onMounted(() => {
   border: 2px solid var(--border-color);
 }
 
-.select-btn {
-  padding: 8px 16px;
-  border: 2px solid var(--primary-color);
-  border-radius: 6px;
-  background: var(--input-bg);
-  color: var(--primary-color);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.select-btn:hover {
-  background: var(--primary-color);
-  color: #ffffff;
-}
-
-/* 开关按钮 */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--border-color);
-  transition: 0.3s;
-  border-radius: 24px;
-}
-
-.slider:before {
-  position: absolute;
-  content: '';
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: var(--primary-color);
-}
-
-input:checked + .slider:before {
-  transform: translateX(20px);
-}
-
-input:focus + .slider {
-  box-shadow: 0 0 1px var(--primary-color);
-}
-
 /* 颜色选择器 */
 .color-control {
   display: flex;
@@ -898,6 +879,7 @@ input:focus + .slider {
   transition: all 0.2s;
   position: relative;
   border: 2px solid transparent;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .color-option:hover {
@@ -921,4 +903,21 @@ input:focus + .slider {
   border-radius: 50%;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
+
+/* 自定义颜色选择器 */
+.custom-color-option {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 隐藏的颜色选择器 */
+.color-picker-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 自定义按钮 */
 </style>
