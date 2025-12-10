@@ -121,7 +121,7 @@
         <img
           v-if="windowStore.avatar"
           :src="windowStore.avatar"
-          class="avatar-preview"
+          :class="['avatar-preview', { 'default-avatar': windowStore.avatar === defaultAvatar }]"
           alt="头像预览"
         />
         <button class="btn" @click="handleSelectAvatar">选择图片</button>
@@ -858,11 +858,18 @@ onMounted(() => {
 }
 
 .avatar-preview {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--border-color);
+}
+
+/* 暗色模式下默认头像反色 */
+@media (prefers-color-scheme: dark) {
+  .avatar-preview.default-avatar {
+    filter: invert(1);
+  }
 }
 
 /* 颜色选择器 */

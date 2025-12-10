@@ -1,0 +1,50 @@
+name: Upstream Sync
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    - cron: "0 * * * *" # 每小时自动同步一次
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  sync_latest_from_upstream:
+    name: Sync latest commits from upstream repo
+    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
+
+    steps:
+      # Step 1: 检出目标仓库
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+
+      # Step 2: 执行同步操作
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
+        with:
+          upstream_sync_repo: ZToolsCenter/ZTools # 上游仓库地址
+          upstream_sync_branch: main # 上游分支
+          target_sync_branch: main # 目标分支
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }} # 自动生成的 token，无需设置
+
+          # 设置 test_mode 为 true 可以测试而不实际执行同步
+          test_mode: false
+
+      - name: Sync check
+        if: failure()
+        run: |
+          echo "[Error] 由于上游仓库的工作流文件发生变化，GitHub 已自动暂停计划的自动更新。你需要手动同步你的 fork。"
+          exit 1
+
+      - name: Check for new commits
+        if: success()
+        run: |
+          echo "✅ 同步完成！"
+          if [ "${{ steps.sync.outputs.has_new_commits }}" == "true" ]; then
+            echo "📦 已同步新的提交"
+          else
+            echo "ℹ️ 没有新的更新"
+          fi
+

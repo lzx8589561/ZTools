@@ -438,3 +438,33 @@ body {
 .card.clickable {
   cursor: pointer;
 }
+
+/* 全局滚动条样式优化 - 亮色模式 */
+@media (prefers-color-scheme: light) {
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15) !important;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25) !important;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: rgba(0, 0, 0, 0.35) !important;
+  }
+}
+
+/* 全局滚动条样式优化 - 暗色模式 */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35) !important;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: rgba(255, 255, 255, 0.5) !important;
+  }
+}

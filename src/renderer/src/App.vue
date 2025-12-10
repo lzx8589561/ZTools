@@ -104,10 +104,19 @@ async function detachCurrentPlugin(): Promise<void> {
 }
 
 // 监听显示设置页面的变化,调整窗口高度
-watch(currentView, () => {
-  if (currentView.value === ViewMode.Plugin) {
+watch(currentView, (newView, oldView) => {
+  if (newView === ViewMode.Plugin) {
     return
   }
+  
+  // 从设置页面返回搜索页面时，聚焦输入框
+  if (oldView === ViewMode.Settings && newView === ViewMode.Search) {
+    nextTick(() => {
+      searchBoxRef.value?.focus()
+      searchResultsRef.value?.resetSelection()
+    })
+  }
+  
   updateWindowHeight()
 })
 
@@ -386,10 +395,6 @@ onUnmounted(() => {
 
 .search-box-wrapper {
   flex-shrink: 0;
-}
-
-.search-box-wrapper.with-divider {
-  border-bottom: 1px solid var(--divider-color);
 }
 
 .plugin-placeholder {

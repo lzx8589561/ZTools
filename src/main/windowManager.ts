@@ -1,9 +1,19 @@
-import { BrowserWindow, screen, globalShortcut, app, Tray, Menu, nativeImage } from 'electron'
 import { is, platform } from '@electron-toolkit/utils'
+import {
+  app,
+  BrowserWindow,
+  globalShortcut,
+  Menu,
+  nativeImage,
+  nativeTheme,
+  screen,
+  Tray
+} from 'electron'
 import path from 'path'
+import trayIconDark from '../../resources/trayTemplate@2x-dark.png?asset'
+import trayIconLight from '../../resources/trayTemplate@2x-light.png?asset'
 import clipboardManager from './clipboardManager'
 import pluginManager from './pluginManager'
-import trayIcon from '../../resources/trayTemplate@2x.png?asset'
 
 /**
  * 窗口管理器
@@ -143,13 +153,15 @@ class WindowManager {
 
     if (platform.isMacOS) {
       // macOS 使用 Template 模式的图标（会自动适配明暗主题）
-      icon = nativeImage.createFromPath(trayIcon)
-      // icon = icon.resize({ width: 16, height: 16 })
+      // 使用 dark 版本作为模板图标
+      icon = nativeImage.createFromPath(trayIconDark)
       // 设置为模板图标（适配明暗模式）
       icon.setTemplateImage(true)
     } else {
-      // Windows/Linux
-      icon = nativeImage.createFromPath(trayIcon)
+      // Windows/Linux - 根据系统主题选择图标
+      // 暗色模式用 light（白色图标），亮色模式用 dark（黑色图标）
+      const iconPath = nativeTheme.shouldUseDarkColors ? trayIconLight : trayIconDark
+      icon = nativeImage.createFromPath(iconPath)
     }
 
     this.tray = new Tray(icon)
@@ -171,6 +183,25 @@ class WindowManager {
         this.tray.popUpContextMenu(this.trayMenu)
       }
     })
+
+    // 监听系统主题变化（Windows/Linux）
+    if (!platform.isMacOS) {
+      nativeTheme.on('updated', () => {
+        this.updateTrayIcon()
+      })
+    }
+  }
+
+  /**
+   * 更新托盘图标（用于主题切换）
+   */
+  private updateTrayIcon(): void {
+    if (!this.tray || platform.isMacOS) return
+
+    // 暗色模式用 light（白色图标），亮色模式用 dark（黑色图标）
+    const iconPath = nativeTheme.shouldUseDarkColors ? trayIconLight : trayIconDark
+    const icon = nativeImage.createFromPath(iconPath)
+    this.tray.setImage(icon)
   }
 
   /**

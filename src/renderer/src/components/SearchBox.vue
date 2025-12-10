@@ -16,7 +16,7 @@
         <UpdateIcon />
       </div>
       <!-- 头像按钮（无更新或插件模式时显示） -->
-      <img v-else :src="avatarUrl" height="36" width="36" class="search-btn" @click="handleSettingsClick" />
+      <img v-else :src="avatarUrl" :class="['search-btn', { 'default-avatar': isDefaultAvatar }]" @click="handleSettingsClick" />
     </div>
   </div>
 </template>
@@ -55,6 +55,11 @@ const avatarUrl = computed(() => {
   }
   // 否则显示用户头像
   return windowStore.avatar
+})
+
+// 判断是否是默认头像
+const isDefaultAvatar = computed(() => {
+  return avatarUrl.value.includes('default.png')
 })
 const inputRef = ref<HTMLInputElement>()
 const measureRef = ref<HTMLSpanElement>()
@@ -305,7 +310,10 @@ defineExpose({
 }
 
 .search-btn {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  object-fit: cover;
   cursor: pointer;
   transition: all 0.2s;
   -webkit-app-region: no-drag;
@@ -319,5 +327,12 @@ defineExpose({
 
 .search-btn:active {
   transform: scale(0.95);
+}
+
+/* 暗色模式下默认头像反色 */
+@media (prefers-color-scheme: dark) {
+  .search-btn.default-avatar {
+    filter: invert(1);
+  }
 }
 </style>
