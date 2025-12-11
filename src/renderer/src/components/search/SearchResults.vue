@@ -207,18 +207,20 @@ const pinnedApps = computed(() => {
 
 // 可见的最近使用应用（用于键盘导航）
 const visibleRecentApps = computed(() => {
-  if (isRecentExpanded.value) {
+  const defaultVisibleCount = 9 * 2 // itemsPerRow * defaultVisibleRows（对应 CollapsibleList 的配置）
+  if (isRecentExpanded.value || displayApps.value.length <= defaultVisibleCount) {
     return displayApps.value
   }
-  return displayApps.value.slice(0, 9)
+  return displayApps.value.slice(0, defaultVisibleCount)
 })
 
 // 可见的固定应用（用于键盘导航）
 const visiblePinnedApps = computed(() => {
-  if (isPinnedExpanded.value) {
+  const defaultVisibleCount = 9 * 2 // itemsPerRow * defaultVisibleRows
+  if (isPinnedExpanded.value || pinnedApps.value.length <= defaultVisibleCount) {
     return pinnedApps.value
   }
-  return pinnedApps.value.slice(0, 9)
+  return pinnedApps.value.slice(0, defaultVisibleCount)
 })
 
 // 将一维数组转换为二维数组(每行9个)
