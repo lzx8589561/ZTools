@@ -152,10 +152,10 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useAppDataStore } from '../stores/appDataStore'
+import { useCommandDataStore } from '../stores/commandDataStore'
 import PluginDetail from './PluginDetail.vue'
 
-const appDataStore = useAppDataStore()
+const appDataStore = useCommandDataStore()
 
 // 插件相关状态
 const plugins = ref<any[]>([])
@@ -327,8 +327,8 @@ async function handleReloadPlugin(plugin: any): Promise<void> {
     if (result.success) {
       // 重新加载插件列表
       await loadPlugins()
-      // 刷新搜索数据（重新加载应用和插件命令列表）
-      await appDataStore.loadApps()
+      // 刷新搜索数据（重新加载指令列表）
+      await appDataStore.loadCommands()
       alert('插件重载成功!')
     } else {
       alert(`插件重载失败: ${result.error}`)

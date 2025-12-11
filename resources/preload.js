@@ -178,7 +178,7 @@ window.ztools = {
 
     // 创建 Proxy 对象模拟 BrowserWindow
     const createProxy = (path = []) => {
-      return new Proxy(() => { }, {
+      return new Proxy(() => {}, {
         get: (target, prop) => {
           if (typeof prop !== 'string') return undefined
 

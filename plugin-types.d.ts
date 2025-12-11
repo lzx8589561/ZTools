@@ -12,7 +12,7 @@ declare global {
       isWindows: () => boolean
       isLinux: () => boolean
       isDarkColors: () => boolean
-      
+
       // ===== 系统设置 =====
       getSystemSettings: () => Promise<any[]>
 

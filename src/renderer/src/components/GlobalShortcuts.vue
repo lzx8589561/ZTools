@@ -1,82 +1,85 @@
 <template>
   <div class="content-panel">
-    <!-- 可滚动内容区 -->
-    <div v-show="!showEditor" class="scrollable-content">
-      <!-- 顶部添加按钮 -->
-      <div class="panel-header">
-        <button class="btn" @click="showAddEditor">添加快捷键</button>
+    <!-- 顶部添加按钮 -->
+    <div class="panel-header">
+      <button class="btn" @click="showAddDialog">添加快捷键</button>
+    </div>
+
+    <!-- 快捷键列表 -->
+    <div class="shortcut-list">
+      <div v-for="shortcut in shortcuts" :key="shortcut.id" class="shortcut-item">
+        <div class="shortcut-key">{{ shortcut.shortcut }}</div>
+        <div class="shortcut-arrow">→</div>
+        <div class="shortcut-target">{{ shortcut.target }}</div>
+        <button class="btn btn-sm" :disabled="isDeleting" @click="handleEdit(shortcut)">
+          编辑
+        </button>
+        <button
+          class="btn btn-sm btn-danger"
+          :disabled="isDeleting"
+          @click="handleDelete(shortcut.id)"
+        >
+          删除
+        </button>
       </div>
 
-      <!-- 快捷键列表 -->
-      <div class="shortcut-list">
-        <div v-for="shortcut in shortcuts" :key="shortcut.id" class="card shortcut-item">
-          <div class="shortcut-info">
-            <div class="shortcut-key-display">{{ shortcut.shortcut }}</div>
-            <div class="shortcut-desc">{{ shortcut.target }}</div>
-          </div>
-
-          <div class="shortcut-meta">
-            <button class="icon-btn edit-btn" title="编辑" :disabled="isDeleting" @click="handleEdit(shortcut)">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </button>
-            <button class="icon-btn delete-btn" title="删除" :disabled="isDeleting" @click="handleDelete(shortcut.id)">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path
-                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                ></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- 空状态 -->
-        <div v-if="shortcuts.length === 0" class="empty-state">
-          <div class="empty-icon">⌨️</div>
-          <div class="empty-text">暂无全局快捷键</div>
-          <div class="empty-hint">点击"添加快捷键"来创建你的第一个全局快捷键</div>
-        </div>
+      <!-- 空状态 -->
+      <div v-if="shortcuts.length === 0" class="empty-state">
+        <div class="empty-icon">⌨️</div>
+        <div class="empty-text">暂无全局快捷键</div>
+        <div class="empty-hint">点击"添加快捷键"来创建你的第一个全局快捷键</div>
       </div>
     </div>
 
-    <!-- 快捷键编辑器覆盖面板组件 -->
-    <ShortcutEditor
-      v-if="showEditor"
-      :editing-shortcut="editingShortcut"
-      @back="closeEditor"
-      @save="handleSave"
-    />
+    <!-- 添加/编辑快捷键对话框 -->
+    <div v-if="isDialogVisible" class="dialog-overlay" @click="closeDialog">
+      <div class="dialog-content" @click.stop>
+        <h3 class="dialog-title">{{ editingShortcut ? '编辑全局快捷键' : '添加全局快捷键' }}</h3>
+
+        <div class="dialog-body">
+          <!-- 快捷键录制 -->
+          <div class="form-item">
+            <label class="form-label">快捷键</label>
+            <div
+              class="input hotkey-recorder"
+              :class="{ recording: isRecording }"
+              @click="startRecording"
+            >
+              {{ displayHotkey }}
+            </div>
+            <span class="form-hint">点击上方输入框录制快捷键</span>
+          </div>
+
+          <!-- 目标指令输入 -->
+          <div class="form-item">
+            <label class="form-label">目标指令</label>
+            <input
+              v-model="targetCommand"
+              type="text"
+              class="input"
+              placeholder="格式: 插件名称/指令名称，例如: 翻译/translate"
+            />
+            <span class="form-hint">格式: 插件名称/指令名称（支持动态指令）</span>
+          </div>
+        </div>
+
+        <div class="dialog-footer">
+          <button class="btn" @click="closeDialog">取消</button>
+          <button
+            class="btn btn-solid"
+            :disabled="!recordedShortcut || !targetCommand"
+            @click="handleAdd"
+          >
+            确定
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import ShortcutEditor from './ShortcutEditor.vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 interface GlobalShortcut {
   id: string
@@ -89,9 +92,21 @@ interface GlobalShortcut {
 const shortcuts = ref<GlobalShortcut[]>([])
 const isDeleting = ref(false)
 
-// 编辑器状态
-const showEditor = ref(false)
+// 添加/编辑对话框
+const isDialogVisible = ref(false)
+const isRecording = ref(false)
+const recordedShortcut = ref('')
+const recordedKeys = ref<string[]>([])
+const targetCommand = ref('')
 const editingShortcut = ref<GlobalShortcut | null>(null) // 正在编辑的快捷键
+
+// 显示的快捷键文本
+const displayHotkey = computed(() => {
+  if (isRecording.value) {
+    return recordedKeys.value.length > 0 ? recordedKeys.value.join('+') : '请按下快捷键组合...'
+  }
+  return recordedShortcut.value || '点击录制快捷键'
+})
 
 // 加载快捷键列表
 async function loadShortcuts(): Promise<void> {
@@ -114,27 +129,107 @@ async function saveShortcuts(): Promise<void> {
   }
 }
 
-// 显示添加编辑器
-function showAddEditor(): void {
+// 显示添加对话框
+function showAddDialog(): void {
   editingShortcut.value = null
-  showEditor.value = true
+  isDialogVisible.value = true
+  recordedShortcut.value = ''
+  targetCommand.value = ''
 }
 
-// 显示编辑编辑器
+// 显示编辑对话框
 function handleEdit(shortcut: GlobalShortcut): void {
   editingShortcut.value = shortcut
-  showEditor.value = true
+  isDialogVisible.value = true
+  recordedShortcut.value = shortcut.shortcut
+  targetCommand.value = shortcut.target
 }
 
-// 关闭编辑器
-function closeEditor(): void {
-  showEditor.value = false
+// 关闭对话框
+function closeDialog(): void {
+  isDialogVisible.value = false
   editingShortcut.value = null
+  stopRecording()
 }
 
-// 保存快捷键（添加或编辑）
-async function handleSave(recordedShortcut: string, targetCommand: string): Promise<void> {
-  if (!recordedShortcut || !targetCommand) {
+// 开始录制快捷键
+function startRecording(): void {
+  isRecording.value = true
+  recordedKeys.value = []
+  recordedShortcut.value = ''
+  document.addEventListener('keydown', handleKeyDown)
+  document.addEventListener('keyup', handleKeyUp)
+}
+
+// 停止录制
+function stopRecording(): void {
+  isRecording.value = false
+  document.removeEventListener('keydown', handleKeyDown)
+  document.removeEventListener('keyup', handleKeyUp)
+}
+
+// 处理按键
+function handleKeyDown(e: KeyboardEvent): void {
+  e.preventDefault()
+  e.stopPropagation()
+
+  const keys: string[] = []
+
+  // 修饰键
+  if (e.metaKey) keys.push('Command')
+  if (e.ctrlKey) keys.push('Ctrl')
+  if (e.altKey) keys.push('Option')
+  if (e.shiftKey) keys.push('Shift')
+
+  // 主键
+  if (
+    e.code &&
+    ![
+      'MetaLeft',
+      'MetaRight',
+      'ControlLeft',
+      'ControlRight',
+      'AltLeft',
+      'AltRight',
+      'ShiftLeft',
+      'ShiftRight'
+    ].includes(e.code)
+  ) {
+    let mainKey = ''
+
+    if (e.code.startsWith('Key')) {
+      mainKey = e.code.replace('Key', '')
+    } else if (e.code.startsWith('Digit')) {
+      mainKey = e.code.replace('Digit', '')
+    } else if (e.code.startsWith('Numpad')) {
+      mainKey = e.code
+    } else {
+      mainKey = e.code
+    }
+
+    if (mainKey) {
+      keys.push(mainKey)
+    }
+  }
+
+  recordedKeys.value = keys
+}
+
+// 按键抬起时确认快捷键
+function handleKeyUp(e: KeyboardEvent): void {
+  e.preventDefault()
+  e.stopPropagation()
+
+  if (recordedKeys.value.length > 1) {
+    // 至少需要一个修饰键 + 一个主键
+    recordedShortcut.value = recordedKeys.value.join('+')
+    stopRecording()
+  }
+}
+
+// 添加或编辑快捷键
+async function handleAdd(): Promise<void> {
+  if (!recordedShortcut.value || !targetCommand.value) {
     return
   }
 
@@ -142,7 +237,7 @@ async function handleSave(recordedShortcut: string, targetCommand: string): Prom
   if (editingShortcut.value) {
     // 检查新快捷键是否与其他快捷键冲突（排除自己）
     const exists = shortcuts.value.some(
-      (s) => s.id !== editingShortcut.value!.id && s.shortcut === recordedShortcut
+      (s) => s.id !== editingShortcut.value!.id && s.shortcut === recordedShortcut.value
     )
     if (exists) {
       alert('该快捷键已被其他指令占用，请使用其他快捷键')
@@ -153,38 +248,38 @@ async function handleSave(recordedShortcut: string, targetCommand: string): Prom
 
     try {
       // 如果快捷键改变了，需要先注销旧的
-      if (oldShortcut !== recordedShortcut) {
+      if (oldShortcut !== recordedShortcut.value) {
         await window.ztools.unregisterGlobalShortcut(oldShortcut)
       }
 
       // 注册新快捷键
       const result = await window.ztools.registerGlobalShortcut(
-        recordedShortcut,
-        targetCommand
+        recordedShortcut.value,
+        targetCommand.value
       )
 
       if (result.success) {
         // 更新列表
         const index = shortcuts.value.findIndex((s) => s.id === editingShortcut.value!.id)
         if (index >= 0) {
-          shortcuts.value[index].shortcut = recordedShortcut
-          shortcuts.value[index].target = targetCommand
+          shortcuts.value[index].shortcut = recordedShortcut.value
+          shortcuts.value[index].target = targetCommand.value
         }
 
         // 保存到数据库
         await saveShortcuts()
         alert('快捷键更新成功!')
-        closeEditor()
+        closeDialog()
       } else {
         // 注册失败，恢复旧快捷键
-        if (oldShortcut !== recordedShortcut) {
+        if (oldShortcut !== recordedShortcut.value) {
           await window.ztools.registerGlobalShortcut(oldShortcut, editingShortcut.value.target)
         }
         alert(`快捷键注册失败: ${result.error}`)
       }
     } catch (error: any) {
       // 注册失败，恢复旧快捷键
-      if (oldShortcut !== recordedShortcut) {
+      if (oldShortcut !== recordedShortcut.value) {
         await window.ztools.registerGlobalShortcut(oldShortcut, editingShortcut.value.target)
       }
       console.error('更新快捷键失败:', error)
@@ -194,7 +289,7 @@ async function handleSave(recordedShortcut: string, targetCommand: string): Prom
   }
 
   // 添加模式：检查快捷键是否已存在
-  const exists = shortcuts.value.some((s) => s.shortcut === recordedShortcut)
+  const exists = shortcuts.value.some((s) => s.shortcut === recordedShortcut.value)
   if (exists) {
     alert('该快捷键已存在，请使用其他快捷键')
     return
@@ -203,8 +298,8 @@ async function handleSave(recordedShortcut: string, targetCommand: string): Prom
   // 添加到列表
   const newShortcut: GlobalShortcut = {
     id: Date.now().toString(),
-    shortcut: recordedShortcut,
-    target: targetCommand,
+    shortcut: recordedShortcut.value,
+    target: targetCommand.value,
     enabled: true
   }
 
@@ -216,12 +311,12 @@ async function handleSave(recordedShortcut: string, targetCommand: string): Prom
   // 注册全局快捷键
   try {
     const result = await window.ztools.registerGlobalShortcut(
-      recordedShortcut,
-      targetCommand
+      recordedShortcut.value,
+      targetCommand.value
     )
     if (result.success) {
       alert('快捷键添加成功!')
-      closeEditor()
+      closeDialog()
     } else {
       // 如果注册失败，从列表中移除
       shortcuts.value = shortcuts.value.filter((s) => s.id !== newShortcut.id)
@@ -254,6 +349,7 @@ async function handleDelete(id: string): Promise<void> {
       // 从列表中移除
       shortcuts.value = shortcuts.value.filter((s) => s.id !== id)
       await saveShortcuts()
+      alert('快捷键删除成功!')
     } else {
       alert(`快捷键删除失败: ${result.error}`)
     }
@@ -269,37 +365,37 @@ async function handleDelete(id: string): Promise<void> {
 onMounted(() => {
   loadShortcuts()
 })
+
+// 清理
+onUnmounted(() => {
+  stopRecording()
+})
 </script>
 
 <style scoped>
 .content-panel {
-  position: relative;
-  height: 100%;
-  background: var(--card-bg);
-}
-
-.scrollable-content {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 20px;
+  background: var(--card-bg);
 }
 
 /* 自定义滚动条 */
-.scrollable-content::-webkit-scrollbar {
+.content-panel::-webkit-scrollbar {
   width: 6px;
 }
 
-.scrollable-content::-webkit-scrollbar-track {
+.content-panel::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.scrollable-content::-webkit-scrollbar-thumb {
+.content-panel::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 3px;
 }
 
-.scrollable-content::-webkit-scrollbar-thumb:hover {
+.content-panel::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
 
@@ -314,64 +410,56 @@ onMounted(() => {
 .shortcut-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .shortcut-item {
   display: flex;
   align-items: center;
-  padding: 12px 14px;
-  cursor: pointer;
+  padding: 16px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  gap: 12px;
   transition: all 0.2s;
+  user-select: none;
 }
 
 .shortcut-item:hover {
   background: var(--hover-bg);
-  transform: translateX(2px);
 }
 
-.shortcut-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.shortcut-key-display {
-  font-size: 16px;
+.shortcut-key {
+  padding: 6px 12px;
+  background: var(--active-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-color);
-  margin-bottom: 4px;
   font-family: monospace;
+  white-space: nowrap;
 }
 
-.shortcut-desc {
-  font-size: 13px;
+.shortcut-arrow {
+  font-size: 18px;
   color: var(--text-secondary);
+}
+
+.shortcut-target {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.shortcut-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.btn.btn-sm {
+  margin-right: 8px;
 }
 
-/* 图标按钮颜色样式 */
-.edit-btn {
-  color: var(--primary-color);
-}
-
-.edit-btn:hover:not(:disabled) {
-  background: var(--primary-light-bg);
-}
-
-.delete-btn {
-  color: var(--danger-color);
-}
-
-.delete-btn:hover:not(:disabled) {
-  background: var(--danger-light-bg);
+.btn.btn-sm:last-child {
+  margin-right: 0;
 }
 
 /* 空状态 */
@@ -400,5 +488,94 @@ onMounted(() => {
 .empty-hint {
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+/* 对话框 */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-content {
+  background: var(--dialog-bg);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 40px var(--shadow-color);
+}
+
+.dialog-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--divider-color);
+  margin: 0;
+}
+
+.dialog-body {
+  padding: 24px;
+}
+
+.form-item {
+  margin-bottom: 20px;
+}
+
+.form-item:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.form-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.hotkey-recorder {
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+}
+
+.hotkey-recorder.recording {
+  border-color: color-mix(in srgb, var(--primary-color), black 15%);
+  background: var(--primary-light-bg);
+  color: var(--primary-color);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--divider-color);
 }
 </style>

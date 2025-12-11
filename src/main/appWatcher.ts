@@ -1,7 +1,7 @@
 import chokidar, { FSWatcher } from 'chokidar'
-import path from 'path'
 import { BrowserWindow } from 'electron'
-import appsAPI from './api/renderer/apps'
+import path from 'path'
+import appsAPI from './api/renderer/commands'
 
 class AppWatcher {
   private watcher: FSWatcher | null = null

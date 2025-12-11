@@ -228,7 +228,16 @@
 
 <script setup lang="ts">
 defineProps<{
-  name: 'settings' | 'plugin' | 'back' | 'keyboard' | 'store' | 'database' | 'trash' | 'list' | 'close'
+  name:
+    | 'settings'
+    | 'plugin'
+    | 'back'
+    | 'keyboard'
+    | 'store'
+    | 'database'
+    | 'trash'
+    | 'list'
+    | 'close'
   size?: number | string
 }>()
 </script>

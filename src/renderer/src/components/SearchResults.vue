@@ -86,7 +86,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { useAppDataStore } from '../stores/appDataStore'
+import { useCommandDataStore } from '../stores/commandDataStore'
 import { useWindowStore } from '../stores/windowStore'
 import CollapsibleList from './common/CollapsibleList.vue'
 
@@ -103,16 +103,16 @@ const emit = defineEmits<{
 }>()
 
 // 使用 store
-const appDataStore = useAppDataStore()
+const appDataStore = useCommandDataStore()
 const {
   loading,
   search,
-  getRecentApps,
+  getRecentCommands,
   removeFromHistory,
-  pinApp,
-  unpinApp,
+  pinCommand,
+  unpinCommand,
   isPinned,
-  getPinnedApps,
+  getPinnedCommands,
   updatePinnedOrder
 } = appDataStore
 
@@ -135,13 +135,17 @@ const internalSearchResults = computed(() => {
 // 分离系统设置结果
 const systemSettingResults = computed(() => {
   if (!props.searchQuery.trim()) return []
-  return internalSearchResults.value.filter((item: any) => item.type === 'direct' && item.subType === 'system-setting')
+  return internalSearchResults.value.filter(
+    (item: any) => item.type === 'direct' && item.subType === 'system-setting'
+  )
 })
 
 // 应用和插件结果（排除系统设置）
 const appAndPluginResults = computed(() => {
   if (!props.searchQuery.trim()) return []
-  return internalSearchResults.value.filter((item: any) => !(item.type === 'direct' && item.subType === 'system-setting'))
+  return internalSearchResults.value.filter(
+    (item: any) => !(item.type === 'direct' && item.subType === 'system-setting')
+  )
 })
 
 // 推荐列表
@@ -190,7 +194,7 @@ const finderActions = computed(() => {
 // 显示的应用列表
 const displayApps = computed(() => {
   if (props.searchQuery.trim() === '') {
-    return getRecentApps()
+    return getRecentCommands()
   } else {
     return internalSearchResults.value
   }
@@ -198,7 +202,7 @@ const displayApps = computed(() => {
 
 // 固定应用列表
 const pinnedApps = computed(() => {
-  return getPinnedApps()
+  return getPinnedCommands()
 })
 
 // 可见的最近使用应用（用于键盘导航）
@@ -231,14 +235,14 @@ function arrayToGrid(arr: any[], cols = 9): any[][] {
 const visibleAppAndPluginResults = computed(() => {
   const defaultVisibleCount = 9 * 2 // itemsPerRow * defaultVisibleRows
   const canExpand = appAndPluginResults.value.length > defaultVisibleCount
-  
+
   let result
   if (!canExpand || isSearchResultsExpanded.value) {
     result = appAndPluginResults.value
   } else {
     result = appAndPluginResults.value.slice(0, defaultVisibleCount)
   }
-  
+
   return result
 })
 
@@ -380,7 +384,13 @@ watch(
 
 // 监听展开状态变化，调整窗口高度
 watch(
-  [isRecentExpanded, isPinnedExpanded, isSearchResultsExpanded, isSystemSettingsExpanded, isRecommendationsExpanded],
+  [
+    isRecentExpanded,
+    isPinnedExpanded,
+    isSearchResultsExpanded,
+    isSystemSettingsExpanded,
+    isRecommendationsExpanded
+  ],
   () => {
     nextTick(() => {
       emit('height-changed')
@@ -424,8 +434,7 @@ function scrollToSelectedItem(): void {
       })
     } else if (isBelow) {
       // 项目在下方，滚动到底部对齐
-      const scrollTop =
-        container.scrollTop + (targetRect.bottom - containerRect.bottom) + 10 // 留一点边距
+      const scrollTop = container.scrollTop + (targetRect.bottom - containerRect.bottom) + 10 // 留一点边距
       container.scrollTo({
         top: scrollTop,
         behavior: 'smooth'
@@ -435,12 +444,9 @@ function scrollToSelectedItem(): void {
 }
 
 // 监听选中项变化，自动滚动
-watch(
-  [selectedRow, selectedCol],
-  () => {
-    scrollToSelectedItem()
-  }
-)
+watch([selectedRow, selectedCol], () => {
+  scrollToSelectedItem()
+})
 
 // 监听固定列表变化，调整窗口高度（特别是从空到非空或从非空到空时）
 watch(
@@ -497,7 +503,12 @@ async function handleAppContextMenu(
   }
 
   // 如果是应用（不是插件和系统设置），显示"打开文件位置"
-  if (app.type !== 'system-setting' && app.type !== 'plugin' && app.path && !app.path.startsWith('baidu-search:')) {
+  if (
+    app.type !== 'system-setting' &&
+    app.type !== 'plugin' &&
+    app.path &&
+    !app.path.startsWith('baidu-search:')
+  ) {
     menuItems.push({
       id: `reveal-in-finder:${JSON.stringify({ path: app.path })}`,
       label: '打开文件位置'
@@ -671,7 +682,7 @@ async function handleContextMenuCommand(command: string): Promise<void> {
     const appJson = command.replace('pin-app:', '')
     try {
       const app = JSON.parse(appJson)
-      await pinApp(app)
+      await pinCommand(app)
       nextTick(() => {
         emit('height-changed')
       })
@@ -682,7 +693,7 @@ async function handleContextMenuCommand(command: string): Promise<void> {
     const jsonStr = command.replace('unpin-app:', '')
     try {
       const { path, featureCode } = JSON.parse(jsonStr)
-      await unpinApp(path, featureCode)
+      await unpinCommand(path, featureCode)
       nextTick(() => {
         emit('height-changed')
       })

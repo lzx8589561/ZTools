@@ -12,11 +12,10 @@ export class SystemSettingsAPI {
     }
     return []
   }
-  
+
   public isWindows(): boolean {
     return process.platform === 'win32'
   }
 }
 
 export const systemSettingsAPI = new SystemSettingsAPI()
-

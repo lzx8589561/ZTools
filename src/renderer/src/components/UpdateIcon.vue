@@ -1,12 +1,6 @@
 <template>
   <div class="update-icon">
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="10" fill="#10b981" class="pulse" />
       <!-- 向上箭头主体 -->
       <path

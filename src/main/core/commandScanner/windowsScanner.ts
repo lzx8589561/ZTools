@@ -43,7 +43,8 @@ const SKIP_EXTENSIONS = [
 ]
 
 // 要跳过的快捷方式名称关键词（不区分大小写）
-const SKIP_NAME_PATTERN = /website|网站|帮助|help|readme|read me|文档|manual|license|documentation|uninstall|unin|卸载/i
+const SKIP_NAME_PATTERN =
+  /website|网站|帮助|help|readme|read me|文档|manual|license|documentation|uninstall|unin|卸载/i
 
 // ========== 辅助函数 ==========
 
@@ -143,7 +144,7 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
       // 如果目标路径存在且文件存在，使用目标路径；否则使用 .lnk 文件本身
       let appPath = fullPath
       let iconPath = fullPath // 图标提取路径，默认为快捷方式
-      
+
       if (targetPath) {
         const fs = await import('fs')
         if (fs.existsSync(targetPath)) {

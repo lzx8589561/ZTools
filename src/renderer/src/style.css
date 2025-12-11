@@ -400,28 +400,28 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.toggle input:checked+.toggle-slider {
+.toggle input:checked + .toggle-slider {
   background-color: color-mix(in srgb, var(--primary-color), black 15%);
   border-color: color-mix(in srgb, var(--primary-color), black 15%);
 }
 
-.toggle input:checked+.toggle-slider:hover {
+.toggle input:checked + .toggle-slider:hover {
   background-color: color-mix(in srgb, var(--primary-color), black 25%);
   border-color: color-mix(in srgb, var(--primary-color), black 25%);
 }
 
-.toggle input:checked+.toggle-slider:hover::before {
+.toggle input:checked + .toggle-slider:hover::before {
   transform: translateX(20px) scale(1.15);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.toggle input:checked+.toggle-slider::before {
+.toggle input:checked + .toggle-slider::before {
   transform: translateX(20px);
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.toggle input:focus+.toggle-slider {
+.toggle input:focus + .toggle-slider {
   box-shadow: 0 0 0 3px var(--primary-light-bg);
 }
 

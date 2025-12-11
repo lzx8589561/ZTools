@@ -244,7 +244,6 @@ class WindowManager {
         }
       }
     ])
-
   }
 
   /**

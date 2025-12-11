@@ -4,7 +4,7 @@
 
 **A High-Performance, Extensible Application Launcher and Plugin Platform**
 
-*Open Source Implementation of uTools | Supports macOS and Windows*
+_Open Source Implementation of uTools | Supports macOS and Windows_
 
 [![GitHub release](https://img.shields.io/github/v/release/lzx8589561/ZTools)](https://github.com/ZToolsCenter/ZTools/releases)
 [![License](https://img.shields.io/github/license/lzx8589561/ZTools)](./LICENSE)
@@ -75,18 +75,21 @@ npm run build:win    # Windows
 ZTools provides a built-in plugin market for easy browsing and installation:
 
 **Key Features**:
+
 - 📦 **Online Installation** - One-click download and install plugins
 - 🔄 **Plugin Updates** - Detect plugin updates and upgrade to the latest version with one click
 - 🔍 **Plugin Details** - View plugin description, version, author, and other details
 - ✅ **Installed Management** - Installed plugins can be opened or upgraded directly
 
 **How to Use**:
+
 1. Open ZTools settings (click avatar)
 2. Switch to "Plugin Market" tab
 3. Browse and install plugins of interest
 4. Installed plugins will show "Open" or "Upgrade" button
 
 **Technical Implementation**:
+
 - Plugins hosted on Lanzou Cloud (`https://ilt.lanzouu.com/b0pn75v9g`), password: `5w87`
 - Plugin package format: ZIP archive containing `plugin.json` and plugin files
 - Version comparison: Automatically compare local and market versions (semantic versioning)
@@ -97,12 +100,14 @@ ZTools provides a built-in plugin market for easy browsing and installation:
 ZTools supports one-click in-app updates without manual download:
 
 **Update Process**:
+
 1. App automatically checks for updates (on startup or manual check)
 2. Shows update prompt when new version is available
 3. Click update button to start downloading the update package
 4. Automatically installs and restarts the app after download completes
 
 **Technical Implementation**:
+
 - Update source: Lanzou Cloud (`https://ilt.lanzouu.com/b0pn8htad`), password: `1f8i`
 - Update info file: `ztools_update_x.x.x.txt` (JSON format)
 - Update package format: ZIP archive containing new version's `app.asar` file
@@ -117,6 +122,7 @@ ZTools supports one-click in-app updates without manual download:
   5. Automatically restarts app
 
 **Platform Support**:
+
 - ✅ macOS (Apple Silicon)
 - ✅ Windows (x64)
 
@@ -169,7 +175,7 @@ Headless plugins are ideal for background tasks, data processing, and other scen
 // preload.js
 window.exports = {
   process: {
-    mode: 'none',  // Headless plugin identifier
+    mode: 'none', // Headless plugin identifier
     args: {
       enter: async (action) => {
         // Processing logic

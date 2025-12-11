@@ -19,6 +19,7 @@
 - `defaultVisibleRows` - 默认显示的行数（折叠时），默认 `1`
 
 **Events**
+
 - `@select` - 选中应用
 - `@contextmenu` - 右键菜单
 - `@update:apps` - 拖拽排序后更新列表（仅拖拽模式）
@@ -28,11 +29,7 @@
 ```vue
 <template>
   <!-- 普通列表 -->
-  <CollapsibleList
-    title="最近使用"
-    :apps="recentApps"
-    @select="handleSelect"
-  />
+  <CollapsibleList title="最近使用" :apps="recentApps" @select="handleSelect" />
 
   <!-- 可拖拽列表 -->
   <CollapsibleList
@@ -69,4 +66,3 @@ const isExpanded = ref(false)
 2. 使用 TypeScript + `<script setup>` 语法
 3. 优先使用项目根目录 `CONTROL_GUIDE.md` 中定义的通用样式类
 4. 在本 README 添加组件说明和用法示例
-

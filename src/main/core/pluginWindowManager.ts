@@ -1,7 +1,6 @@
-import { BrowserWindow, BrowserWindowConstructorOptions, WebContentsView } from 'electron'
+import { BrowserWindow, BrowserWindowConstructorOptions, session, WebContentsView } from 'electron'
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
-import { session } from 'electron'
 import mainPreload from '../../../resources/preload.js?asset'
 
 /**

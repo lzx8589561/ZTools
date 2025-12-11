@@ -52,6 +52,7 @@ git checkout -b fix/my-bugfix
 ```
 
 分支命名规范：
+
 - `feature/` - 新功能
 - `fix/` - Bug 修复
 - `docs/` - 文档更新
@@ -91,6 +92,7 @@ npm run lint
 ```
 
 类型（type）：
+
 - `feat`: 新功能
 - `fix`: Bug 修复
 - `docs`: 文档更新
@@ -118,11 +120,13 @@ git push origin feature/my-feature
 ```
 
 PR 标题格式：
+
 - 使用清晰简洁的标题
 - 参考 commit 信息格式
 - 如 `feat: add xxx feature` 或 `fix: resolve xxx issue`
 
 PR 描述应包含：
+
 - **变更内容**：详细说明做了什么改动
 - **动机**：为什么要做这个改动
 - **测试**：如何测试这些改动

@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    - cron: "0 * * * *" # 每小时自动同步一次
+    - cron: '0 * * * *' # 每小时自动同步一次
   workflow_dispatch: # 允许手动触发
 
 jobs:
@@ -47,4 +47,3 @@ jobs:
           else
             echo "ℹ️ 没有新的更新"
           fi
-

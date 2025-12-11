@@ -1,29 +1,29 @@
 import { BrowserWindow, ipcMain } from 'electron'
 
 // 共享API（主程序和插件都能用）
-import databaseAPI from './shared/database'
 import clipboardAPI from './shared/clipboard'
+import databaseAPI from './shared/database'
 import updaterAPI from './updater'
 
 // 主程序渲染进程专用API
-import appsAPI from './renderer/apps'
+import appsAPI from './renderer/commands'
 import pluginsAPI from './renderer/plugins'
-import windowAPI from './renderer/window'
 import settingsAPI from './renderer/settings'
 import systemAPI from './renderer/system'
 import { systemSettingsAPI } from './renderer/systemSettings'
+import windowAPI from './renderer/window'
 
 // 插件专用API
-import pluginLifecycleAPI from './plugin/lifecycle'
-import pluginUIAPI from './plugin/ui'
 import pluginClipboardAPI from './plugin/clipboard'
 import pluginDialogAPI from './plugin/dialog'
-import pluginWindowAPI from './plugin/window'
-import pluginScreenAPI from './plugin/screen'
-import pluginInputAPI from './plugin/input'
-import pluginShellAPI from './plugin/shell'
-import pluginRedirectAPI from './plugin/redirect'
 import { pluginFeatureAPI } from './plugin/feature'
+import pluginInputAPI from './plugin/input'
+import pluginLifecycleAPI from './plugin/lifecycle'
+import pluginRedirectAPI from './plugin/redirect'
+import pluginScreenAPI from './plugin/screen'
+import pluginShellAPI from './plugin/shell'
+import pluginUIAPI from './plugin/ui'
+import pluginWindowAPI from './plugin/window'
 
 /**
  * API管理器 - 统一初始化和管理所有API模块
@@ -81,7 +81,7 @@ class APIManager {
     // 系统设置 API
     ipcMain.handle('get-system-settings', () => systemSettingsAPI.getSystemSettings())
     ipcMain.handle('is-windows', () => systemSettingsAPI.isWindows())
-    
+
     // 打开插件开发者工具
     ipcMain.handle('open-plugin-devtools', () => {
       try {

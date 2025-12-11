@@ -24,15 +24,15 @@ interface OverCmd {
 type MatchCmd = RegexCmd | OverCmd
 
 // 指令类型枚举
-export type CommandType = 
-  | 'direct'   // 直接启动（app + system-setting）
-  | 'plugin'   // 插件功能
-  | 'builtin'  // 内置功能
+export type CommandType =
+  | 'direct' // 直接启动（app + system-setting）
+  | 'plugin' // 插件功能
+  | 'builtin' // 内置功能
 
 // 子类型（用于区分 direct 类型的具体来源）
-export type CommandSubType = 
-  | 'app'              // 系统应用
-  | 'system-setting'   // 系统设置
+export type CommandSubType =
+  | 'app' // 系统应用
+  | 'system-setting' // 系统设置
 
 // Command 接口（原 App 接口）
 export interface Command {
@@ -68,17 +68,17 @@ interface HistoryItem extends Command {
   useCount: number // 使用次数
 }
 
-const HISTORY_DOC_ID = 'app-history'
-const PINNED_DOC_ID = 'pinned-apps'
+const HISTORY_DOC_ID = 'command-history'
+const PINNED_DOC_ID = 'pinned-commands'
 
-export const useAppDataStore = defineStore('appData', () => {
+export const useCommandDataStore = defineStore('commandData', () => {
   // 历史记录
   const history = ref<HistoryItem[]>([])
-  // 固定应用
-  const pinnedApps = ref<Command[]>([])
-  // 应用和插件列表（用于搜索）
-  const apps = ref<Command[]>([]) // 用于 Fuse 模糊搜索的应用列表
-  const regexApps = ref<Command[]>([]) // 只用正则匹配的应用列表
+  // 固定指令
+  const pinnedCommands = ref<Command[]>([])
+  // 指令列表（用于搜索）
+  const commands = ref<Command[]>([]) // 用于 Fuse 模糊搜索的指令列表
+  const regexCommands = ref<Command[]>([]) // 只用正则匹配的指令列表
   const loading = ref(false)
   const fuse = ref<Fuse<Command> | null>(null)
   // 是否已初始化
@@ -93,8 +93,8 @@ export const useAppDataStore = defineStore('appData', () => {
     }
 
     try {
-      // 并行加载历史记录、固定列表和应用列表
-      await Promise.all([loadHistoryData(), loadPinnedData(), loadApps()])
+      // 并行加载历史记录、固定列表和指令列表
+      await Promise.all([loadHistoryData(), loadPinnedData(), loadCommands()])
 
       // 监听后端历史记录变化事件
       window.ztools.onHistoryChanged(() => {
@@ -102,10 +102,10 @@ export const useAppDataStore = defineStore('appData', () => {
         loadHistoryData()
       })
 
-      // 监听应用列表变化事件（应用文件夹变化时触发）
+      // 监听指令列表变化事件（应用文件夹变化时触发）
       window.ztools.onAppsChanged(() => {
-        console.log('收到应用列表变化通知，重新加载')
-        loadApps()
+        console.log('收到指令列表变化通知，重新加载')
+        loadCommands()
       })
 
       // 监听固定列表变化事件
@@ -121,13 +121,13 @@ export const useAppDataStore = defineStore('appData', () => {
       })
 
       isInitialized.value = true
-      console.log('应用数据初始化完成')
+      console.log('指令数据初始化完成')
     } catch (error) {
-      console.error('初始化应用数据失败:', error)
+      console.error('初始化指令数据失败:', error)
       history.value = []
-      pinnedApps.value = []
-      apps.value = []
-      regexApps.value = []
+      pinnedCommands.value = []
+      commands.value = []
+      regexCommands.value = []
       isInitialized.value = true
     }
   }
@@ -185,13 +185,13 @@ export const useAppDataStore = defineStore('appData', () => {
           return true
         })
 
-        pinnedApps.value = filteredData
+        pinnedCommands.value = filteredData
       } else {
-        pinnedApps.value = []
+        pinnedCommands.value = []
       }
     } catch (error) {
       console.error('加载固定列表失败:', error)
-      pinnedApps.value = []
+      pinnedCommands.value = []
     }
   }
 
@@ -201,14 +201,14 @@ export const useAppDataStore = defineStore('appData', () => {
     console.log('已刷新历史记录和固定列表')
   }
 
-  // 加载应用列表
-  async function loadApps(): Promise<void> {
+  // 加载指令列表
+  async function loadCommands(): Promise<void> {
     loading.value = true
     try {
       const rawApps = await window.ztools.getApps()
       const plugins = await window.ztools.getPlugins()
 
-      // 处理本地应用
+      // 处理本地应用指令
       const appItems = rawApps.map((app) => ({
         ...app,
         type: 'direct' as const,
@@ -221,13 +221,13 @@ export const useAppDataStore = defineStore('appData', () => {
           .toLowerCase()
       }))
 
-      // 处理插件：每个 cmd 转换为一个独立搜索项
-      const pluginItems: Command[] = [] // 普通插件搜索项
-      const regexItems: Command[] = [] // 正则匹配搜索项
+      // 处理插件：每个 cmd 转换为一个独立指令
+      const pluginItems: Command[] = [] // 普通插件指令
+      const regexItems: Command[] = [] // 正则匹配指令
 
       for (const plugin of plugins) {
         if (plugin.features && Array.isArray(plugin.features) && plugin.features.length > 0) {
-          // 1. 插件名称本身作为一个搜索项（不关联具体 feature）
+          // 1. 插件名称本身作为一个指令（不关联具体 feature）
           let defaultFeatureCode: string | undefined = undefined
           // 如果插件没有指定 main，则默认启动第一个非匹配指令的功能
           if (!plugin.main && plugin.features) {
@@ -257,7 +257,7 @@ export const useAppDataStore = defineStore('appData', () => {
               .toLowerCase()
           })
 
-          // 2. 每个 feature 的每个 cmd 都作为独立的搜索项
+          // 2. 每个 feature 的每个 cmd 都作为独立的指令
           for (const feature of plugin.features) {
             if (feature.cmds && Array.isArray(feature.cmds)) {
               // 优先使用 feature 的 icon，如果没有则使用 plugin 的 logo
@@ -336,15 +336,15 @@ export const useAppDataStore = defineStore('appData', () => {
       }
 
       // 合并所有指令
-      apps.value = [...appItems, ...pluginItems, ...settingCommands]
-      regexApps.value = regexItems
+      commands.value = [...appItems, ...pluginItems, ...settingCommands]
+      regexCommands.value = regexItems
 
       console.log(
-        `加载了 ${appItems.length} 个应用, ${pluginItems.length} 个插件功能, ${settingCommands.length} 个系统设置, ${regexItems.length} 个匹配指令`
+        `加载了 ${appItems.length} 个应用指令, ${pluginItems.length} 个插件指令, ${settingCommands.length} 个系统设置指令, ${regexItems.length} 个匹配指令`
       )
 
       // 初始化 Fuse.js 搜索引擎
-      fuse.value = new Fuse(apps.value, {
+      fuse.value = new Fuse(commands.value, {
         keys: [
           { name: 'name', weight: 2 }, // 名称权重最高
           { name: 'pinyin', weight: 1.5 }, // 拼音
@@ -356,7 +356,7 @@ export const useAppDataStore = defineStore('appData', () => {
         includeMatches: true // 包含匹配信息
       })
     } catch (error) {
-      console.error('加载应用失败:', error)
+      console.error('加载指令失败:', error)
     } finally {
       loading.value = false
     }
@@ -366,7 +366,7 @@ export const useAppDataStore = defineStore('appData', () => {
   function search(query: string): { bestMatches: SearchResult[]; regexMatches: SearchResult[] } {
     if (!query || !fuse.value) {
       return {
-        bestMatches: apps.value.filter((app) => app.type === 'direct' && app.subType === 'app'), // 无搜索时只显示应用
+        bestMatches: commands.value.filter((cmd) => cmd.type === 'direct' && cmd.subType === 'app'), // 无搜索时只显示应用
         regexMatches: []
       }
     }
@@ -378,33 +378,33 @@ export const useAppDataStore = defineStore('appData', () => {
       matches: r.matches as MatchInfo[]
     }))
 
-    // 2. 匹配指令匹配（从 regexApps 中查找，包括 regex 和 over 类型）
+    // 2. 匹配指令匹配（从 regexCommands 中查找，包括 regex 和 over 类型）
     const regexMatches: SearchResult[] = []
-    for (const app of regexApps.value) {
-      if (app.matchCmd) {
-        if (app.matchCmd.type === 'regex') {
+    for (const cmd of regexCommands.value) {
+      if (cmd.matchCmd) {
+        if (cmd.matchCmd.type === 'regex') {
           // Regex 类型匹配
           // 检查用户输入长度是否满足最小要求
-          if (query.length < app.matchCmd.minLength) {
+          if (query.length < cmd.matchCmd.minLength) {
             continue
           }
 
           try {
             // 提取正则表达式（去掉两边的斜杠和标志）
-            const regexStr = app.matchCmd.match.replace(/^\/|\/[gimuy]*$/g, '')
+            const regexStr = cmd.matchCmd.match.replace(/^\/|\/[gimuy]*$/g, '')
             const regex = new RegExp(regexStr)
 
             // 测试用户输入是否匹配
             if (regex.test(query)) {
-              regexMatches.push(app)
+              regexMatches.push(cmd)
             }
           } catch (error) {
-            console.error(`正则表达式 ${app.matchCmd.match} 解析失败:`, error)
+            console.error(`正则表达式 ${cmd.matchCmd.match} 解析失败:`, error)
           }
-        } else if (app.matchCmd.type === 'over') {
+        } else if (cmd.matchCmd.type === 'over') {
           // Over 类型匹配
-          const minLength = app.matchCmd.minLength ?? 1
-          const maxLength = app.matchCmd.maxLength ?? 10000
+          const minLength = cmd.matchCmd.minLength ?? 1
+          const maxLength = cmd.matchCmd.maxLength ?? 10000
 
           // 检查长度是否满足要求
           if (query.length < minLength || query.length > maxLength) {
@@ -412,9 +412,9 @@ export const useAppDataStore = defineStore('appData', () => {
           }
 
           // 检查是否被排除
-          if (app.matchCmd.exclude) {
+          if (cmd.matchCmd.exclude) {
             try {
-              const excludeRegexStr = app.matchCmd.exclude.replace(/^\/|\/[gimuy]*$/g, '')
+              const excludeRegexStr = cmd.matchCmd.exclude.replace(/^\/|\/[gimuy]*$/g, '')
               const excludeRegex = new RegExp(excludeRegexStr)
 
               // 如果匹配到排除规则，跳过
@@ -422,12 +422,12 @@ export const useAppDataStore = defineStore('appData', () => {
                 continue
               }
             } catch (error) {
-              console.error(`排除正则表达式 ${app.matchCmd.exclude} 解析失败:`, error)
+              console.error(`排除正则表达式 ${cmd.matchCmd.exclude} 解析失败:`, error)
             }
           }
 
           // 通过所有检查，添加到匹配结果
-          regexMatches.push(app)
+          regexMatches.push(cmd)
         }
       }
     }
@@ -454,35 +454,36 @@ export const useAppDataStore = defineStore('appData', () => {
 
       await window.ztools.dbPut(HISTORY_DOC_ID, cleanData)
     } catch (error) {
-      console.error('保存历史记录失败:', error)
+      console.error('保存指令历史记录失败:', error)
     }
   }
 
-  // 获取最近使用的应用（自动同步最新的应用数据）
-  function getRecentApps(limit?: number): Command[] {
-    // 同步历史记录中的应用数据，确保使用最新的路径和图标
+  // 获取最近使用（自动同步最新数据）
+  function getRecentCommands(limit?: number): Command[] {
+    // 同步历史记录数据，确保使用最新的路径和图标
     const syncedHistory = history.value.map((historyItem) => {
-      // 尝试从当前应用列表中找到同名应用
-      const currentApp = apps.value.find((app) => 
-        app.name === historyItem.name && 
-        app.type === historyItem.type &&
-        app.subType === historyItem.subType &&
-        app.featureCode === historyItem.featureCode
+      // 尝试从当前列表中找到
+      const currentCommand = commands.value.find(
+        (app) =>
+          app.name === historyItem.name &&
+          app.type === historyItem.type &&
+          app.subType === historyItem.subType &&
+          app.featureCode === historyItem.featureCode
       )
-      
-      // 如果找到了最新的应用数据，使用最新的；否则使用历史记录
-      return currentApp || historyItem
+
+      // 如果找到了最新数据，使用最新的；否则使用历史记录
+      return currentCommand || historyItem
     })
-    
+
     if (limit) {
       return syncedHistory.slice(0, limit)
     }
     return syncedHistory
   }
 
-  // 从历史记录中删除指定应用
-  async function removeFromHistory(appPath: string, featureCode?: string): Promise<void> {
-    await window.ztools.removeFromHistory(appPath, featureCode)
+  // 从历史记录中删除指定指令
+  async function removeFromHistory(commandPath: string, featureCode?: string): Promise<void> {
+    await window.ztools.removeFromHistory(commandPath, featureCode)
     // 后端会发送 history-changed 事件，触发重新加载
   }
 
@@ -497,13 +498,13 @@ export const useAppDataStore = defineStore('appData', () => {
   // 保存固定列表到数据库
   async function savePinned(): Promise<void> {
     try {
-      const cleanData = pinnedApps.value.map((app) => ({
-        name: app.name,
-        path: app.path,
-        icon: app.icon,
-        type: app.type,
-        featureCode: app.featureCode, // 保存 featureCode
-        pluginExplain: app.pluginExplain // 保存插件说明
+      const cleanData = pinnedCommands.value.map((cmd) => ({
+        name: cmd.name,
+        path: cmd.path,
+        icon: cmd.icon,
+        type: cmd.type,
+        featureCode: cmd.featureCode, // 保存 featureCode
+        pluginExplain: cmd.pluginExplain // 保存插件说明
       }))
 
       await window.ztools.dbPut(PINNED_DOC_ID, cleanData)
@@ -512,19 +513,19 @@ export const useAppDataStore = defineStore('appData', () => {
     }
   }
 
-  // 检查应用是否已固定
-  function isPinned(appPath: string, featureCode?: string): boolean {
-    return pinnedApps.value.some((app) => {
+  // 检查指令是否已固定
+  function isPinned(commandPath: string, featureCode?: string): boolean {
+    return pinnedCommands.value.some((cmd) => {
       // 对于插件，需要同时匹配 path 和 featureCode
-      if (app.type === 'plugin' && featureCode !== undefined) {
-        return app.path === appPath && app.featureCode === featureCode
+      if (cmd.type === 'plugin' && featureCode !== undefined) {
+        return cmd.path === commandPath && cmd.featureCode === featureCode
       }
-      return app.path === appPath
+      return cmd.path === commandPath
     })
   }
 
-  // 固定应用
-  async function pinApp(command: Command): Promise<void> {
+  // 固定指令
+  async function pinCommand(command: Command): Promise<void> {
     // 将 Vue 响应式对象转换为纯对象，避免 IPC 传递时的克隆错误
     const plainCommand = JSON.parse(JSON.stringify(command))
     await window.ztools.pinApp(plainCommand)
@@ -532,32 +533,33 @@ export const useAppDataStore = defineStore('appData', () => {
   }
 
   // 取消固定
-  async function unpinApp(appPath: string, featureCode?: string): Promise<void> {
-    await window.ztools.unpinApp(appPath, featureCode)
+  async function unpinCommand(commandPath: string, featureCode?: string): Promise<void> {
+    await window.ztools.unpinApp(commandPath, featureCode)
     // 后端会发送 pinned-changed 事件，触发重新加载
   }
 
-  // 获取固定列表（自动同步最新的应用数据）
-  function getPinnedApps(): Command[] {
-    // 同步固定应用的数据，确保使用最新的路径和图标
-    return pinnedApps.value.map((pinnedItem) => {
-      // 尝试从当前应用列表中找到同名应用
-      const currentApp = apps.value.find((app) => 
-        app.name === pinnedItem.name && 
-        app.type === pinnedItem.type &&
-        app.subType === pinnedItem.subType &&
-        app.featureCode === pinnedItem.featureCode
+  // 获取固定列表（自动同步最新数据）
+  function getPinnedCommands(): Command[] {
+    // 同步固定列表的数据，确保使用最新的路径和图标
+    return pinnedCommands.value.map((pinnedItem) => {
+      // 尝试从当前列表中找到
+      const currentCommand = commands.value.find(
+        (cmd) =>
+          cmd.name === pinnedItem.name &&
+          cmd.type === pinnedItem.type &&
+          cmd.subType === pinnedItem.subType &&
+          cmd.featureCode === pinnedItem.featureCode
       )
-      
-      // 如果找到了最新的应用数据，使用最新的；否则使用固定列表中的
-      return currentApp || pinnedItem
+
+      // 如果找到了最新数据，使用最新的；否则使用固定列表中的
+      return currentCommand || pinnedItem
     })
   }
 
   // 更新固定列表顺序
   async function updatePinnedOrder(newOrder: Command[]): Promise<void> {
     // 乐观更新：立即更新本地状态，避免等待后端导致的延迟和闪动
-    pinnedApps.value = newOrder
+    pinnedCommands.value = newOrder
 
     // 标记这是本地触发的更新
     isLocalPinnedUpdate = true
@@ -576,37 +578,37 @@ export const useAppDataStore = defineStore('appData', () => {
 
   // 清空固定列表
   async function clearPinned(): Promise<void> {
-    pinnedApps.value = []
+    pinnedCommands.value = []
     await savePinned()
   }
 
   return {
     // 状态
     history,
-    pinnedApps,
-    apps,
-    regexApps,
+    pinnedCommands,
+    commands,
+    regexCommands,
     loading,
     isInitialized,
 
     // 初始化
     initializeData,
 
-    // 应用和搜索相关
-    loadApps,
+    // 指令和搜索相关
+    loadCommands,
     search,
     reloadUserData,
 
-    // 历史记录方法（移除了 addToHistory，由后端处理）
-    getRecentApps,
+    // 指令历史记录方法（添加由后端处理）
+    getRecentCommands,
     removeFromHistory,
     clearHistory,
 
-    // 固定应用方法
+    // 固定指令方法
     isPinned,
-    pinApp,
-    unpinApp,
-    getPinnedApps,
+    pinCommand,
+    unpinCommand,
+    getPinnedCommands,
     updatePinnedOrder,
     clearPinned
   }

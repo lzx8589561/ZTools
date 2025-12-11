@@ -1,19 +1,18 @@
 import { app } from 'electron'
 import path from 'path'
+import { MS_SETTINGS_URIS } from './msSettingsUris'
 
 export interface SystemSetting {
   name: string
-  nameEn?: string
   uri: string
   category: string
-  icon: string
-  keywords?: string[]
+  icon?: string
 }
 
 // 获取系统设置统一图标路径（返回 file:// 协议 URL）
 function getSystemSettingIcon(): string {
   let iconFilePath: string
-  
+
   if (app.isPackaged) {
     // 打包后使用 resources 目录
     iconFilePath = path.join(process.resourcesPath, 'icons', 'settings-fill.png')
@@ -21,66 +20,285 @@ function getSystemSettingIcon(): string {
     // 开发模式：从 app.getAppPath() 获取项目根目录
     iconFilePath = path.join(app.getAppPath(), 'resources', 'icons', 'settings-fill.png')
   }
-  
+
   // 直接返回 file:// 协议 URL（与应用图标处理方式一致）
   return `file:///${iconFilePath}`
 }
 
 const iconPath = getSystemSettingIcon()
 
-export const WINDOWS_SETTINGS: SystemSetting[] = [
-  // 系统（8项）
-  { name: '显示设置', nameEn: 'Display', uri: 'ms-settings:display', category: '系统', icon: iconPath },
-  { name: '声音设置', nameEn: 'Sound', uri: 'ms-settings:sound', category: '系统', icon: iconPath },
-  { name: '电源和睡眠', nameEn: 'Power', uri: 'ms-settings:powersleep', category: '系统', icon: iconPath },
-  { name: '存储', nameEn: 'Storage', uri: 'ms-settings:storagesense', category: '系统', icon: iconPath },
-  { name: '通知', nameEn: 'Notifications', uri: 'ms-settings:notifications', category: '系统', icon: iconPath },
-  { name: '多任务', nameEn: 'Multitasking', uri: 'ms-settings:multitasking', category: '系统', icon: iconPath },
-  { name: '平板模式', nameEn: 'Tablet', uri: 'ms-settings:tabletmode', category: '系统', icon: iconPath },
-  { name: '系统信息', nameEn: 'About', uri: 'ms-settings:about', category: '系统', icon: iconPath },
-  
-  // 网络（4项）
-  { name: '网络和 Internet', nameEn: 'Network', uri: 'ms-settings:network', category: '网络', icon: iconPath },
-  { name: 'Wi-Fi', uri: 'ms-settings:network-wifi', category: '网络', icon: iconPath },
-  { name: '以太网', nameEn: 'Ethernet', uri: 'ms-settings:network-ethernet', category: '网络', icon: iconPath },
-  { name: 'VPN', uri: 'ms-settings:network-vpn', category: '网络', icon: iconPath },
-  
-  // 个性化（6项）
-  { name: '个性化', nameEn: 'Personalization', uri: 'ms-settings:personalization', category: '个性化', icon: iconPath },
-  { name: '背景', nameEn: 'Background', uri: 'ms-settings:personalization-background', category: '个性化', icon: iconPath },
-  { name: '颜色', nameEn: 'Colors', uri: 'ms-settings:personalization-colors', category: '个性化', icon: iconPath },
-  { name: '锁屏', nameEn: 'Lock Screen', uri: 'ms-settings:lockscreen', category: '个性化', icon: iconPath },
-  { name: '主题', nameEn: 'Themes', uri: 'ms-settings:themes', category: '个性化', icon: iconPath },
-  { name: '开始菜单', nameEn: 'Start', uri: 'ms-settings:personalization-start', category: '个性化', icon: iconPath },
-  
-  // 应用（4项）
-  { name: '应用和功能', nameEn: 'Apps', uri: 'ms-settings:appsfeatures', category: '应用', icon: iconPath },
-  { name: '默认应用', nameEn: 'Default Apps', uri: 'ms-settings:defaultapps', category: '应用', icon: iconPath },
-  { name: '启动应用', nameEn: 'Startup', uri: 'ms-settings:startupapps', category: '应用', icon: iconPath },
-  { name: '可选功能', nameEn: 'Optional', uri: 'ms-settings:optionalfeatures', category: '应用', icon: iconPath },
-  
-  // 账户（3项）
-  { name: '你的信息', nameEn: 'Your Info', uri: 'ms-settings:yourinfo', category: '账户', icon: iconPath },
-  { name: '邮件账户', nameEn: 'Email', uri: 'ms-settings:emailandaccounts', category: '账户', icon: iconPath },
-  { name: '登录选项', nameEn: 'Sign-in', uri: 'ms-settings:signinoptions', category: '账户', icon: iconPath },
-  
-  // 时间和语言（4项）
-  { name: '日期和时间', nameEn: 'Date & Time', uri: 'ms-settings:dateandtime', category: '时间', icon: iconPath },
-  { name: '区域', nameEn: 'Region', uri: 'ms-settings:regionlanguage', category: '语言', icon: iconPath },
-  { name: '语言', nameEn: 'Language', uri: 'ms-settings:keyboard', category: '语言', icon: iconPath },
-  { name: '语音', nameEn: 'Speech', uri: 'ms-settings:speech', category: '语言', icon: iconPath },
-  
-  // 更新和安全（3项）
-  { name: 'Windows 更新', nameEn: 'Update', uri: 'ms-settings:windowsupdate', category: '更新', icon: iconPath },
-  { name: '安全中心', nameEn: 'Security', uri: 'ms-settings:windowsdefender', category: '安全', icon: iconPath },
-  { name: '备份', nameEn: 'Backup', uri: 'ms-settings:backup', category: '更新', icon: iconPath },
-  
-  // 隐私（2项）
-  { name: '隐私', nameEn: 'Privacy', uri: 'ms-settings:privacy', category: '隐私', icon: iconPath },
-  { name: '诊断反馈', nameEn: 'Diagnostics', uri: 'ms-settings:privacy-feedback', category: '隐私', icon: iconPath },
-  
-  // 辅助功能（2项）
-  { name: '辅助功能', nameEn: 'Ease of Access', uri: 'ms-settings:easeofaccess', category: '辅助', icon: iconPath },
-  { name: '放大镜', nameEn: 'Magnifier', uri: 'ms-settings:easeofaccess-magnifier', category: '辅助', icon: iconPath },
+// 合并所有系统设置并统一添加图标
+const allSettings: Omit<SystemSetting, 'icon'>[] = [
+  // === ms-settings URI（来自微软官方文档和 SS64）===
+  ...MS_SETTINGS_URIS,
+
+  // === 控制面板和系统工具（非 ms-settings）===
+  // 控制面板（16项）
+  {
+    name: '编辑用户环境变量',
+    uri: 'rundll32 sysdm.cpl,EditEnvironmentVariables',
+    category: '系统'
+  },
+  {
+    name: '编辑系统环境变量',
+    uri: 'rundll32 sysdm.cpl,EditEnvironmentVariables',
+    category: '系统'
+  },
+  {
+    name: '系统属性',
+    uri: 'SystemPropertiesAdvanced.exe',
+    category: '系统'
+  },
+  {
+    name: '计算机名',
+    uri: 'SystemPropertiesComputerName.exe',
+    category: '系统'
+  },
+  {
+    name: '系统保护',
+    uri: 'SystemPropertiesProtection.exe',
+    category: '系统'
+  },
+  {
+    name: '远程设置',
+    uri: 'SystemPropertiesRemote.exe',
+    category: '系统'
+  },
+  {
+    name: '程序和功能',
+    uri: 'appwiz.cpl',
+    category: '应用'
+  },
+  {
+    name: '控制面板',
+    uri: 'control.exe',
+    category: '系统'
+  },
+  {
+    name: '鼠标属性',
+    uri: 'main.cpl',
+    category: '设备'
+  },
+  {
+    name: '网络连接',
+    uri: 'ncpa.cpl',
+    category: '网络'
+  },
+  {
+    name: '电源选项',
+    uri: 'powercfg.cpl',
+    category: '系统'
+  },
+  {
+    name: '防火墙',
+    uri: 'firewall.cpl',
+    category: '安全'
+  },
+  {
+    name: '用户账户',
+    uri: 'netplwiz.exe',
+    category: '账户'
+  },
+  {
+    name: '日期和时间',
+    uri: 'timedate.cpl',
+    category: '时间'
+  },
+
+  // 管理工具（12项）
+  {
+    name: '设备管理器',
+    uri: 'devmgmt.msc',
+    category: '管理'
+  },
+  {
+    name: '磁盘管理',
+    uri: 'diskmgmt.msc',
+    category: '管理'
+  },
+  {
+    name: '计算机管理',
+    uri: 'compmgmt.msc',
+    category: '管理'
+  },
+  {
+    name: '服务',
+    uri: 'services.msc',
+    category: '管理'
+  },
+  {
+    name: '任务管理器',
+    uri: 'taskmgr.exe',
+    category: '系统'
+  },
+  {
+    name: '注册表编辑器',
+    uri: 'regedit.exe',
+    category: '系统'
+  },
+  {
+    name: '事件查看器',
+    uri: 'eventvwr.msc',
+    category: '管理'
+  },
+  {
+    name: '任务计划程序',
+    uri: 'taskschd.msc',
+    category: '管理'
+  },
+  {
+    name: '性能监视器',
+    uri: 'perfmon.msc',
+    category: '管理'
+  },
+  {
+    name: '资源监视器',
+    uri: 'resmon.exe',
+    category: '系统'
+  },
+  {
+    name: '组策略编辑器',
+    uri: 'gpedit.msc',
+    category: '管理'
+  },
+  {
+    name: '本地安全策略',
+    uri: 'secpol.msc',
+    category: '安全'
+  },
+
+  // 常用系统工具（15项）
+  {
+    name: '命令提示符',
+    uri: 'cmd.exe',
+    category: '系统'
+  },
+  {
+    name: 'PowerShell',
+    uri: 'powershell.exe',
+    category: '系统'
+  },
+  {
+    name: 'Windows Terminal',
+    uri: 'wt.exe',
+    category: '系统'
+  },
+  {
+    name: '记事本',
+    uri: 'notepad.exe',
+    category: '应用'
+  },
+  {
+    name: '计算器',
+    uri: 'calc.exe',
+    category: '应用'
+  },
+  {
+    name: '画图',
+    uri: 'mspaint.exe',
+    category: '应用'
+  },
+  {
+    name: '截图工具',
+    uri: 'snippingtool.exe',
+    category: '应用'
+  },
+  {
+    name: '放大镜工具',
+    uri: 'magnify.exe',
+    category: '辅助'
+  },
+  {
+    name: '字符映射表',
+    uri: 'charmap.exe',
+    category: '应用'
+  },
+  {
+    name: '远程桌面连接',
+    uri: 'mstsc.exe',
+    category: '系统'
+  },
+  {
+    name: '系统配置',
+    uri: 'msconfig.exe',
+    category: '系统'
+  },
+  {
+    name: '磁盘清理',
+    uri: 'cleanmgr.exe',
+    category: '系统'
+  },
+  {
+    name: '磁盘碎片整理',
+    uri: 'dfrgui.exe',
+    category: '系统'
+  },
+  {
+    name: '系统信息工具',
+    uri: 'msinfo32.exe',
+    category: '系统'
+  },
+  {
+    name: '步骤记录器',
+    uri: 'psr.exe',
+    category: '系统'
+  },
+
+  // 高级功能（10项）
+  {
+    name: '键盘属性',
+    uri: 'control.exe keyboard',
+    category: '设备'
+  },
+  {
+    name: '声音属性',
+    uri: 'mmsys.cpl',
+    category: '系统'
+  },
+  {
+    name: '添加打印机',
+    uri: 'printui.exe',
+    category: '设备'
+  },
+  {
+    name: '系统还原',
+    uri: 'rstrui.exe',
+    category: '系统'
+  },
+  {
+    name: 'DirectX 诊断工具',
+    uri: 'dxdiag.exe',
+    category: '系统'
+  },
+  {
+    name: '程序兼容性助手',
+    uri: 'msdt.exe -id PCWDiagnostic',
+    category: '系统'
+  },
+  {
+    name: '内存诊断工具',
+    uri: 'MdSched.exe',
+    category: '系统'
+  },
+  {
+    name: 'Windows 功能',
+    uri: 'optionalfeatures.exe',
+    category: '系统'
+  },
+  {
+    name: '打开运行',
+    uri: 'rundll32 shell32.dll,#61',
+    category: '系统'
+  },
+  {
+    name: '关于 Windows',
+    uri: 'winver.exe',
+    category: '系统'
+  }
 ]
 
+// 统一添加图标并导出
+export const WINDOWS_SETTINGS: SystemSetting[] = allSettings.map((setting) => ({
+  ...setting,
+  icon: iconPath
+}))

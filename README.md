@@ -4,7 +4,7 @@
 
 **一个高性能、可扩展的应用启动器和插件平台**
 
-*uTools 的开源实现 | 支持 macOS 和 Windows*
+_uTools 的开源实现 | 支持 macOS 和 Windows_
 
 [![GitHub release](https://img.shields.io/github/v/release/lzx8589561/ZTools)](https://github.com/ZToolsCenter/ZTools/releases)
 [![License](https://img.shields.io/github/license/lzx8589561/ZTools)](./LICENSE)
@@ -75,18 +75,21 @@ npm run build:win    # Windows
 ZTools 提供内置的插件市场，可以方便地浏览和安装插件：
 
 **主要功能**：
+
 - 📦 **在线安装** - 一键下载安装插件
 - 🔄 **插件升级** - 检测插件更新，一键升级到最新版本
 - 🔍 **插件详情** - 查看插件描述、版本、作者等详细信息
 - ✅ **已装管理** - 已安装插件可直接打开或升级
 
 **使用方法**：
+
 1. 打开 ZTools 设置（点击头像）
 2. 切换到"插件市场"标签
 3. 浏览并安装感兴趣的插件
 4. 已安装插件会显示"打开"或"升级"按钮
 
 **技术实现**：
+
 - 插件托管在蓝奏云（`https://ilt.lanzouu.com/b0pn75v9g`），密码：`5w87`
 - 插件包格式：ZIP 压缩包，包含 `plugin.json` 和插件文件
 - 版本比较：自动对比本地版本和市场版本（语义化版本号）
@@ -97,12 +100,14 @@ ZTools 提供内置的插件市场，可以方便地浏览和安装插件：
 ZTools 支持应用内一键更新，无需手动下载安装包：
 
 **更新流程**：
+
 1. 应用自动检查更新（启动时或手动检查）
 2. 发现新版本时显示更新提示
 3. 点击更新按钮开始下载更新包
 4. 下载完成后自动安装并重启应用
 
 **技术实现**：
+
 - 更新源：蓝奏云（`https://ilt.lanzouu.com/b0pn8htad`），密码：`1f8i`
 - 更新信息文件：`ztools_update_x.x.x.txt`（JSON 格式）
 - 更新包格式：ZIP 压缩包，包含新版本的 `app.asar` 文件
@@ -117,6 +122,7 @@ ZTools 支持应用内一键更新，无需手动下载安装包：
   5. 自动重启应用
 
 **平台支持**：
+
 - ✅ macOS (Apple Silicon)
 - ✅ Windows (x64)
 
@@ -169,7 +175,7 @@ ZTools 提供完整的插件系统，支持两种类型：
 // preload.js
 window.exports = {
   process: {
-    mode: 'none',  // 无界面插件标识
+    mode: 'none', // 无界面插件标识
     args: {
       enter: async (action) => {
         // 处理逻辑

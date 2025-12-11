@@ -124,7 +124,7 @@ export const useWindowStore = defineStore('window', () => {
     // 应用主题色类名到 body
     document.body.className = document.body.className.replace(/theme-\w+/g, '').trim()
     document.body.classList.add(`theme-${value}`)
-    
+
     // 如果是自定义颜色，应用自定义颜色值
     if (value === 'custom') {
       applyCustomColor(customColor.value)
@@ -142,12 +142,12 @@ export const useWindowStore = defineStore('window', () => {
   function applyCustomColor(color: string): void {
     // 智能调整颜色
     const adjustedColor = adjustColorForTheme(color)
-    
+
     // 如果颜色被调整了，输出日志
     if (adjustedColor !== color) {
       console.log('颜色已智能调整:', color, '→', adjustedColor)
     }
-    
+
     // 动态设置 CSS 变量
     document.documentElement.style.setProperty('--primary-color', adjustedColor)
   }
@@ -208,11 +208,7 @@ export const useWindowStore = defineStore('window', () => {
   }
 
   // RGB 转 HSL
-  function rgbToHsl(
-    r: number,
-    g: number,
-    b: number
-  ): { h: number; s: number; l: number } {
+  function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
     r /= 255
     g /= 255
     b /= 255

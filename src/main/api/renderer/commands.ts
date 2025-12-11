@@ -5,8 +5,8 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { promisify } from 'util'
 import { normalizeIconPath } from '../../common/iconUtils'
-import { launchApp } from '../../core/appLauncher'
-import { scanApplications } from '../../core/appScanner'
+import { launchApp } from '../../core/commandLauncher'
+import { scanApplications } from '../../core/commandScanner'
 import { pluginFeatureAPI } from '../plugin/feature'
 import databaseAPI from '../shared/database'
 
@@ -68,7 +68,7 @@ export class AppsAPI {
 
     // 尝试从数据库缓存读取
     try {
-      const cachedApps = await databaseAPI.dbGet('cached-apps')
+      const cachedApps = await databaseAPI.dbGet('cached-commands')
       if (cachedApps && Array.isArray(cachedApps) && cachedApps.length > 0) {
         console.log(`从缓存读取到 ${cachedApps.length} 个应用`)
         return cachedApps
@@ -116,7 +116,7 @@ export class AppsAPI {
 
     // 保存到数据库缓存
     try {
-      await databaseAPI.dbPut('cached-apps', appsWithIcons)
+      await databaseAPI.dbPut('cached-commands', appsWithIcons)
       console.log('应用列表已缓存到数据库')
     } catch (error) {
       console.error('缓存应用列表失败:', error)
@@ -329,7 +329,7 @@ export class AppsAPI {
         }
       } else {
         // 从系统应用列表中查找
-        const cachedApps = await databaseAPI.dbGet('cached-apps')
+        const cachedApps = await databaseAPI.dbGet('cached-commands')
         const app = cachedApps?.find((a: any) => a.path === appPath)
 
         if (app) {
@@ -341,6 +341,24 @@ export class AppsAPI {
             pinyinAbbr: app.pinyinAbbr,
             type: 'app'
           }
+        } else {
+          // 如果不是普通应用，尝试从系统设置中查找
+          if (process.platform === 'win32') {
+            const { WINDOWS_SETTINGS } = await import(
+              '../../core/systemSettings/windowsSettings.js'
+            )
+            const setting = WINDOWS_SETTINGS.find((s: any) => s.uri === appPath)
+
+            if (setting) {
+              appInfo = {
+                name: cmdName || setting.name,
+                path: setting.uri,
+                icon: setting.icon,
+                type: 'system-setting',
+                category: setting.category
+              }
+            }
+          }
         }
       }
 
@@ -350,7 +368,7 @@ export class AppsAPI {
       }
 
       // 读取历史记录
-      let history: any[] = (await databaseAPI.dbGet('app-history')) || []
+      let history: any[] = (await databaseAPI.dbGet('command-history')) || []
 
       // 查找是否已存在
       const existingIndex = history.findIndex((item) => {
@@ -385,7 +403,7 @@ export class AppsAPI {
       }
 
       // 保存历史记录
-      await databaseAPI.dbPut('app-history', history)
+      await databaseAPI.dbPut('command-history', history)
 
       console.log('历史记录已更新:', appInfo.name)
 
@@ -467,7 +485,7 @@ export class AppsAPI {
    */
   private async removeFromHistory(appPath: string, featureCode?: string): Promise<void> {
     try {
-      const originalHistory: any[] = (await databaseAPI.dbGet('app-history')) || []
+      const originalHistory: any[] = (await databaseAPI.dbGet('command-history')) || []
 
       // 过滤掉要删除的项
       const history = originalHistory.filter((item) => {
@@ -478,7 +496,7 @@ export class AppsAPI {
         return item.path !== appPath
       })
 
-      await databaseAPI.dbPut('app-history', history)
+      await databaseAPI.dbPut('command-history', history)
       console.log('已从历史记录删除:', appPath, featureCode)
 
       // 通知前端重新加载历史记录
@@ -493,7 +511,7 @@ export class AppsAPI {
    */
   private async pinApp(app: any): Promise<void> {
     try {
-      const pinnedApps: any[] = (await databaseAPI.dbGet('pinned-apps')) || []
+      const pinnedApps: any[] = (await databaseAPI.dbGet('pinned-commands')) || []
 
       // 检查是否已固定
       const exists = pinnedApps.some((item) => {
@@ -521,7 +539,7 @@ export class AppsAPI {
         pinyinAbbr: app.pinyinAbbr
       })
 
-      await databaseAPI.dbPut('pinned-apps', pinnedApps)
+      await databaseAPI.dbPut('pinned-commands', pinnedApps)
       console.log('已固定应用:', app.name)
 
       // 通知前端重新加载固定列表
@@ -536,7 +554,7 @@ export class AppsAPI {
    */
   private async unpinApp(appPath: string, featureCode?: string): Promise<void> {
     try {
-      const originalPinnedApps: any[] = (await databaseAPI.dbGet('pinned-apps')) || []
+      const originalPinnedApps: any[] = (await databaseAPI.dbGet('pinned-commands')) || []
 
       // 过滤掉要删除的项
       const pinnedApps = originalPinnedApps.filter((item) => {
@@ -547,7 +565,7 @@ export class AppsAPI {
         return item.path !== appPath
       })
 
-      await databaseAPI.dbPut('pinned-apps', pinnedApps)
+      await databaseAPI.dbPut('pinned-commands', pinnedApps)
       console.log('已取消固定:', appPath, featureCode)
 
       // 通知前端重新加载固定列表
@@ -574,7 +592,7 @@ export class AppsAPI {
         pinyinAbbr: app.pinyinAbbr
       }))
 
-      await databaseAPI.dbPut('pinned-apps', cleanData)
+      await databaseAPI.dbPut('pinned-commands', cleanData)
       console.log('固定列表顺序已更新')
 
       // 通知前端重新加载固定列表

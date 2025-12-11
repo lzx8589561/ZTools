@@ -36,7 +36,7 @@ import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import SearchBox from './components/SearchBox.vue'
 import SearchResults from './components/SearchResults.vue'
 import Settings from './components/Settings.vue'
-import { useAppDataStore } from './stores/appDataStore'
+import { useCommandDataStore } from './stores/commandDataStore'
 import { useWindowStore } from './stores/windowStore'
 
 enum ViewMode {
@@ -46,7 +46,7 @@ enum ViewMode {
 }
 
 const windowStore = useWindowStore()
-const appDataStore = useAppDataStore()
+const appDataStore = useCommandDataStore()
 
 const searchQuery = ref('')
 const isComposing = ref(false)
@@ -370,7 +370,7 @@ onMounted(async () => {
     // 转换旧的 'app' 类型为新的 'direct' 类型
     const launchOptions = {
       ...options,
-      type: options.type === 'app' ? 'direct' as const : options.type
+      type: options.type === 'app' ? ('direct' as const) : options.type
     }
     window.ztools.launch(launchOptions)
   })
@@ -388,18 +388,18 @@ onMounted(async () => {
     })
   })
 
-  // 监听插件变化事件（安装或删除插件后刷新应用列表）
+  // 监听插件变化事件（安装或删除插件后刷新指令列表）
   window.ztools.onPluginsChanged(async () => {
-    console.log('插件列表已变化，重新加载应用列表和用户数据')
-    // 并行刷新应用列表、历史记录和固定列表
-    await Promise.all([appDataStore.loadApps(), appDataStore.reloadUserData()])
+    console.log('插件列表已变化，重新加载指令列表和用户数据')
+    // 并行刷新指令列表、历史记录和固定列表
+    await Promise.all([appDataStore.loadCommands(), appDataStore.reloadUserData()])
   })
 
   // 监听应用目录变化事件（用户安装或删除应用后自动刷新）
   window.ztools.onAppsChanged(async () => {
-    console.log('应用目录发生变化，重新加载应用列表')
-    // 重新加载应用列表
-    await appDataStore.loadApps()
+    console.log('应用目录发生变化，重新加载指令列表')
+    // 重新加载指令列表
+    await appDataStore.loadCommands()
   })
 
   // 监听更新下载完成事件

@@ -255,14 +255,16 @@ declare global {
       onAppLaunched: (callback: () => void) => void
       onHistoryChanged: (callback: () => void) => void
       onPinnedChanged: (callback: () => void) => void
-      onIpcLaunch: (callback: (options: {
-        path: string
-        type?: 'direct' | 'plugin'
-        featureCode?: string
-        param?: any
-        name?: string
-        cmdType?: string
-      }) => void) => void
+      onIpcLaunch: (
+        callback: (options: {
+          path: string
+          type?: 'direct' | 'plugin'
+          featureCode?: string
+          param?: any
+          name?: string
+          cmdType?: string
+        }) => void
+      ) => void
       onRedirectSearch: (callback: (data: { cmdName: string; payload?: any }) => void) => void
       onSetSubInputValue: (callback: (text: string) => void) => void
       onFocusSubInput: (callback: () => void) => void

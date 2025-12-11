@@ -30,7 +30,13 @@
               </button>
               <button v-else class="btn btn-md" @click="emit('open')">打开</button>
             </template>
-            <button v-else class="btn btn-icon" title="下载" :disabled="isLoading" @click="emit('download')">
+            <button
+              v-else
+              class="btn btn-icon"
+              title="下载"
+              :disabled="isLoading"
+              @click="emit('download')"
+            >
               <span v-if="isLoading" class="loading-spinner"></span>
               <svg
                 v-else
@@ -113,7 +119,7 @@ interface PluginItem {
   localVersion?: string
 }
 
-const props = defineProps<{ 
+const props = defineProps<{
   plugin: PluginItem
   isLoading?: boolean
 }>()

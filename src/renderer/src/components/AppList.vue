@@ -16,7 +16,7 @@
           :ref="(el) => setItemRef(el, index)"
           class="app-item"
           :class="{ selected: index === selectedIndex }"
-          style="cursor: move;"
+          style="cursor: move"
           @click="$emit('select', app)"
           @contextmenu.prevent="$emit('contextmenu', app)"
         >
@@ -76,16 +76,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue';
-import Draggable from 'vuedraggable';
-import type { Command } from '../stores/appDataStore';
-import { highlightMatch } from '../utils/highlight';
+import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue'
+import Draggable from 'vuedraggable'
+import type { Command } from '../stores/commandDataStore'
+import { highlightMatch } from '../utils/highlight'
 
 const props = withDefaults(
-defineProps<{
-  apps: Command[]
-  selectedIndex: number
-  emptyText?: string
+  defineProps<{
+    apps: Command[]
+    selectedIndex: number
+    emptyText?: string
     draggable?: boolean
   }>(),
   {
@@ -144,7 +144,10 @@ function scrollToIndex(index: number): void {
   } else if (isBelow) {
     // 项目在下方，滚动到底部对齐
     container.scrollTop =
-      targetElement.offsetTop - container.offsetTop - container.clientHeight + targetElement.offsetHeight
+      targetElement.offsetTop -
+      container.offsetTop -
+      container.clientHeight +
+      targetElement.offsetHeight
   }
 }
 

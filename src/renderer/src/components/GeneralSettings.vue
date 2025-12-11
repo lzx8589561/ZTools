@@ -10,9 +10,26 @@
         <div class="hotkey-input" :class="{ recording: isRecording }" @click="startRecording">
           {{ displayHotkey }}
         </div>
-        <button v-if="hotkey !== defaultHotkey" class="btn btn-icon" title="重置" @click="resetHotkey">
-          <svg width="20" height="20" viewBox="1 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M14.5 9C14.5 11.4853 12.4853 13.5 10 13.5C7.51472 13.5 5.5 11.4853 5.5 9C5.5 6.51472 7.51472 4.5 10 4.5C11.6569 4.5 13.0943 5.41421 13.8536 6.75M14 4V7H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <button
+          v-if="hotkey !== defaultHotkey"
+          class="btn btn-icon"
+          title="重置"
+          @click="resetHotkey"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="1 0 18 18"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M14.5 9C14.5 11.4853 12.4853 13.5 10 13.5C7.51472 13.5 5.5 11.4853 5.5 9C5.5 6.51472 7.51472 4.5 10 4.5C11.6569 4.5 13.0943 5.41421 13.8536 6.75M14 4V7H11"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </button>
       </div>
@@ -131,8 +148,20 @@
           title="重置"
           @click="handleResetAvatar"
         >
-          <svg width="20" height="20" viewBox="1 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M14.5 9C14.5 11.4853 12.4853 13.5 10 13.5C7.51472 13.5 5.5 11.4853 5.5 9C5.5 6.51472 7.51472 4.5 10 4.5C11.6569 4.5 13.0943 5.41421 13.8536 6.75M14 4V7H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            width="20"
+            height="20"
+            viewBox="1 0 18 18"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M14.5 9C14.5 11.4853 12.4853 13.5 10 13.5C7.51472 13.5 5.5 11.4853 5.5 9C5.5 6.51472 7.51472 4.5 10 4.5C11.6569 4.5 13.0943 5.41421 13.8536 6.75M14 4V7H11"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </button>
       </div>
@@ -145,11 +174,7 @@
         <span class="setting-desc">复制文本后在设定时间内打开窗口自动粘贴</span>
       </div>
       <div class="setting-control">
-        <select
-          v-model="windowStore.autoPaste"
-          class="select"
-          @change="handleAutoPasteChange"
-        >
+        <select v-model="windowStore.autoPaste" class="select" @change="handleAutoPasteChange">
           <option value="off">关闭</option>
           <option value="1s">1秒内</option>
           <option value="3s">3秒内</option>
@@ -509,7 +534,7 @@ async function handleCustomColorChange(event: Event): Promise<void> {
   const target = event.target as HTMLInputElement
   const color = target.value
   customColor.value = color
-  
+
   try {
     windowStore.updateCustomColor(color)
     await saveSettings()
@@ -608,7 +633,7 @@ async function loadSettings(): Promise<void> {
       if (data.avatar) {
         windowStore.updateAvatar(data.avatar)
       }
-      
+
       // 加载自定义颜色
       if (data.customColor) {
         customColor.value = data.customColor
@@ -887,7 +912,9 @@ onMounted(() => {
   transition: all 0.2s;
   position: relative;
   border: 2px solid transparent;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .color-option:hover {

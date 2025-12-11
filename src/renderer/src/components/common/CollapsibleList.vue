@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Command } from '../../stores/appDataStore'
+import type { Command } from '../../stores/commandDataStore'
 import AppList from '../AppList.vue'
 
 interface Props {
@@ -85,7 +85,7 @@ const visibleApps = computed(() => {
     // 折叠时显示默认行数的项目
     result = props.apps.slice(0, defaultVisibleCount.value)
   }
-  
+
   return result
 })
 
@@ -165,4 +165,3 @@ function handleAppsUpdate(newOrder: Command[]): void {
   opacity: 1;
 }
 </style>
-

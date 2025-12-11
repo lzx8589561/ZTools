@@ -56,7 +56,7 @@ Main Process (src/main/)
   │   │   ├─ database.ts   # 数据库 API（支持命名空间隔离）
   │   │   └─ clipboard.ts  # 剪贴板 API
   │   ├─ renderer/         # 主程序渲染进程专用 API
-  │   │   ├─ apps.ts       # 应用管理
+  │   │   ├─ commands.ts   # 指令管理
   │   │   ├─ plugins.ts    # 插件管理
   │   │   ├─ window.ts     # 窗口控制
   │   │   ├─ settings.ts   # 设置管理
@@ -71,6 +71,8 @@ Main Process (src/main/)
   │       ├─ shell.ts      # Shell 命令
   │       └─ feature.ts    # 插件功能
   └─ core/
+      ├─ commandLauncher/  # 指令启动器
+      ├─ commandScanner/   # 指令扫描器
       ├─ lmdb/             # LMDB 数据持久化（高性能键值数据库）
       │   ├─ index.ts      # 主数据库类
       │   ├─ lmdbInstance.ts  # 单例实例
@@ -86,7 +88,7 @@ Preload Script (src/preload/index.ts)
 Renderer Process (src/renderer/)
   ├─ App.vue              # 三种视图模式：Search/Plugin/Settings
   ├─ stores/              # Pinia 状态管理
-  │   ├─ appDataStore.ts  # 应用列表、搜索、历史记录、固定列表
+  │   ├─ commandDataStore.ts  # 指令列表、搜索、历史记录、固定列表
   │   └─ windowStore.ts   # 窗口信息、配置
   └─ components/          # Vue 组件
 ```
@@ -112,7 +114,7 @@ Renderer Process (src/renderer/)
 **插件启动流程**：
 
 ```
-用户输入 → appDataStore.search() 匹配
+用户输入 → commandDataStore.search() 匹配
     ↓
 launch('plugin:/path/to/plugin:featureCode')
     ↓
@@ -177,39 +179,43 @@ pluginManager.createPluginView()
 **命令类型**：
 
 1. **功能指令**（字符串）：用于搜索匹配，支持拼音搜索
+
    ```json
    "cmds": ["文件搜索", "搜索"]
    ```
-   - 存入 `apps` 数组
+
+   - 存入 `commands` 数组
    - 通过 Fuse.js 进行模糊搜索
    - 支持名称、拼音、拼音首字母匹配
    - 适合：固定名称的功能、常用命令
-
 2. **正则匹配指令**（regex）：正则表达式匹配用户输入
+
    ```json
    {
      "type": "regex",
-     "match": "/^calc (.+)$/",  // 正则表达式（带斜杠）
-     "label": "计算器",          // 显示名称
-     "minLength": 5              // 最小输入长度
+     "match": "/^calc (.+)$/", // 正则表达式（带斜杠）
+     "label": "计算器", // 显示名称
+     "minLength": 5 // 最小输入长度
    }
    ```
-   - 存入 `regexApps` 数组
+
+   - 存入 `regexCommands` 数组
    - 通过正则表达式匹配用户输入
    - 需满足 `minLength` 要求
    - 适合：需要提取参数的命令、格式化输入
-
 3. **任意文本匹配指令**（over）：匹配任意文本（可设置排除规则）
+
    ```json
    {
      "type": "over",
      "label": "文本处理",
-     "minLength": 1,              // 最小长度，默认 1
-     "maxLength": 10000,          // 最大长度，默认 10000
-     "exclude": "/^https?:\/\//"  // 排除规则（正则表达式）
+     "minLength": 1, // 最小长度，默认 1
+     "maxLength": 10000, // 最大长度，默认 10000
+     "exclude": "/^https?:\/\//" // 排除规则（正则表达式）
    }
    ```
-   - 存入 `regexApps` 数组
+
+   - 存入 `regexCommands` 数组
    - 匹配任意文本（满足长度限制且不被排除）
    - 可通过 `exclude` 设置排除规则
    - 适合：处理任意文本、翻译、转换等
@@ -217,15 +223,15 @@ pluginManager.createPluginView()
 **重要规则**：
 
 - 每个 `feature.cmds` 都会生成独立的搜索项
-- **功能指令**（字符串类型）：存入 `apps` 数组，通过 Fuse.js 模糊搜索（支持拼音）
-- **匹配指令**（regex/over 类型）：存入 `regexApps` 数组，独立匹配逻辑
+- **功能指令**（字符串类型）：存入 `commands` 数组，通过 Fuse.js 模糊搜索（支持拼音）
+- **匹配指令**（regex/over 类型）：存入 `regexCommands` 数组，独立匹配逻辑
 - 插件名本身也作为一个搜索项（不关联具体 feature，或关联默认 feature）
 - 插件卸载时，后端自动清理历史记录和固定列表中的相关项
 - 插件缓存在 `pluginViews` 数组中，切换时复用（注意内存管理）
 
 ### 状态管理 (Pinia)
 
-#### appDataStore.ts
+#### commandDataStore.ts
 
 负责所有指令（应用、系统设置、插件）的核心数据：
 
@@ -237,21 +243,21 @@ pluginManager.createPluginView()
 
 ```typescript
 export type CommandType =
-  | 'direct'   // 直接启动（应用 + 系统设置）
-  | 'plugin'   // 插件功能
-  | 'builtin'  // 内置功能
+  | 'direct' // 直接启动（应用 + 系统设置）
+  | 'plugin' // 插件功能
+  | 'builtin' // 内置功能
 
 export type CommandSubType =
-  | 'app'              // 系统应用
-  | 'system-setting'   // 系统设置（仅 Windows）
+  | 'app' // 系统应用
+  | 'system-setting' // 系统设置（仅 Windows）
 ```
 
 **关键状态**：
 
-- `apps: Command[]` - 用于 Fuse.js 模糊搜索的列表（应用 + 系统设置 + 功能指令）
-- `regexApps: Command[]` - 用于匹配指令的列表（regex/over 类型）
+- `commands: Command[]` - 用于 Fuse.js 模糊搜索的列表（应用 + 系统设置 + 功能指令）
+- `regexCommands: Command[]` - 用于匹配指令的列表（regex/over 类型）
 - `history: HistoryItem[]` - 使用历史（最多 27 个）
-- `pinnedApps: Command[]` - 固定指令（最多 18 个）
+- `pinnedCommands: Command[]` - 固定指令（最多 18 个）
 - `fuse: Fuse<Command>` - 搜索引擎实例
 - `isInitialized: boolean` - 是否已初始化
 - `loading: boolean` - 是否正在加载
@@ -268,6 +274,7 @@ search(query: string): {
 **指令类型详解**：
 
 1. **直接启动指令**（`type: 'direct'`）：
+
    - **系统应用**（`subType: 'app'`）：
      - macOS: `.app` 应用
      - Windows: `.lnk` 快捷方式
@@ -276,28 +283,28 @@ search(query: string): {
      - 38 个 Windows 系统设置（ms-settings URI）
      - 通过 `shell.openExternal()` 启动
      - 提供统一图标，支持亮/暗色模式
-
 2. **插件指令**（`type: 'plugin'`）：
+
    - **功能指令**（`cmdType: 'text'`）：
      - 字符串类型的 cmd，如 `"搜索"`
-     - 存入 `apps` 数组
+     - 存入 `commands` 数组
      - 支持 Fuse.js 拼音模糊搜索
      - 生成 `pinyin` 和 `pinyinAbbr` 字段
    - **匹配指令**（`cmdType: 'regex' | 'over'`）：
      - 对象类型的 cmd，如 `{ type: 'regex', ... }`
-     - 存入 `regexApps` 数组
+     - 存入 `regexCommands` 数组
      - 独立匹配逻辑（不参与 Fuse 搜索）
      - regex 类型：通过正则表达式匹配，需满足 `minLength`
      - over 类型：匹配任意文本，支持 `minLength`、`maxLength`、`exclude` 规则
 
 **数据加载时机**：
 
-- `initializeData()` - 应用启动时调用一次，并行加载历史、固定列表、应用列表
-- `loadApps()` - 插件安装/删除时刷新
+- `initializeData()` - 应用启动时调用一次，并行加载历史、固定列表、指令列表
+- `loadCommands()` - 插件安装/删除时刷新
 - `reloadUserData()` - 插件删除时刷新历史和固定列表
 - 监听后端事件：
   - `history-changed` → 重新加载历史记录
-  - `apps-changed` → 重新加载应用列表
+  - `apps-changed` → 重新加载指令列表
   - `pinned-changed` → 重新加载固定列表
 
 #### windowStore.ts
@@ -336,10 +343,10 @@ search(query: string): {
 // 三个数据库：main（主数据）、meta（元数据）、attachment（附件）
 
 interface DbDoc {
-  _id: string      // 文档 ID（必需）
-  _rev?: string    // 文档版本号（LMDB 自动管理）
-  data?: any       // 实际数据（主程序使用）
-  [key: string]: any  // 自定义字段（插件使用）
+  _id: string // 文档 ID（必需）
+  _rev?: string // 文档版本号（LMDB 自动管理）
+  data?: any // 实际数据（主程序使用）
+  [key: string]: any // 自定义字段（插件使用）
 }
 ```
 
@@ -373,13 +380,15 @@ interface DbDoc {
 **模块化架构**（`src/main/api/index.ts` 统一管理）：
 
 **共享 API**（主程序和插件都可用）：
+
 - `db:put/get/remove/bulk-docs/all-docs` - 数据库操作（自动处理命名空间）
 - `db:post-attachment/get-attachment` - 附件操作
 - `db-storage:set-item/get-item/remove-item` - 简化的存储接口
 - `clipboard:*` - 剪贴板操作
 
 **主程序渲染进程专用**：
-- `get-apps` - 扫描系统应用（`appScanner.js`）
+
+- `get-commands` - 扫描系统指令（`commandScanner`）
 - `launch` - 启动应用或插件
 - `import-plugin` - 导入 ZIP 插件
 - `import-dev-plugin` - 添加开发插件
@@ -388,6 +397,7 @@ interface DbDoc {
 - `ztools:db-put/db-get` - 直接操作 ZTOOLS 命名空间
 
 **插件专用 API**（`src/main/api/plugin/`）：
+
 - `plugin-lifecycle:*` - 生命周期事件（onPluginEnter、onPluginLeave）
 - `plugin-ui:*` - UI 控制（setExpendHeight、hideWindow、setSubInput）
 - `plugin-window:*` - 窗口管理（创建独立窗口、获取窗口列表）
@@ -398,6 +408,7 @@ interface DbDoc {
 - `plugin-feature:*` - 插件功能管理
 
 **事件推送**（Main → Renderer）：
+
 - `focus-search` - 显示搜索窗口
 - `plugins-changed` - 插件列表变化（安装/删除后）
 - `plugin-opened` / `plugin-closed` - 插件生命周期
@@ -413,18 +424,18 @@ interface DbDoc {
 ```typescript
 // src/main/core/systemSettings/windowsSettings.ts
 export interface SystemSetting {
-  name: string        // 中文名称
-  nameEn?: string     // 英文名称
-  uri: string         // ms-settings URI
-  category: string    // 分类
-  icon: string        // 图标路径（统一使用 settings-fill.png）
+  name: string // 中文名称
+  nameEn?: string // 英文名称
+  uri: string // ms-settings URI
+  category: string // 分类
+  icon: string // 图标路径（统一使用 settings-fill.png）
   keywords?: string[] // 搜索关键词
 }
 
 // 38 个常用系统设置
 export const WINDOWS_SETTINGS: SystemSetting[] = [
   { name: '显示设置', uri: 'ms-settings:display', category: '系统', icon: '...' },
-  { name: '网络和 Internet', uri: 'ms-settings:network', category: '网络', icon: '...' },
+  { name: '网络和 Internet', uri: 'ms-settings:network', category: '网络', icon: '...' }
   // ...
 ]
 ```
@@ -434,11 +445,11 @@ export const WINDOWS_SETTINGS: SystemSetting[] = [
 ```
 应用启动 → 检测 Windows 平台
     ↓
-loadApps() 加载系统设置
+loadCommands() 加载系统设置
     ↓
 转换为 Command 对象（type: 'direct', subType: 'system-setting'）
     ↓
-添加拼音索引，加入 apps 数组
+添加拼音索引，加入 commands 数组
     ↓
 用户搜索 → Fuse.js 匹配 → 启动 shell.openExternal(uri)
 ```
@@ -519,6 +530,7 @@ installPluginFromMarket() - 下载并安装插件
 **关键实现**（`src/main/api/renderer/plugins.ts`）：
 
 1. **获取插件市场列表**：
+
    ```typescript
    private async fetchPluginMarket(): Promise<any> {
      // 蓝奏云文件夹: https://ilt.lanzouu.com/b0pn75v9g
@@ -528,8 +540,8 @@ installPluginFromMarket() - 下载并安装插件
      // 返回插件列表（包含 name, version, downloadUrl 等）
    }
    ```
-
 2. **从市场安装插件**：
+
    ```typescript
    private async installPluginFromMarket(plugin: any): Promise<any> {
      // 1. 获取蓝奏云真实下载链接
@@ -546,8 +558,8 @@ installPluginFromMarket() - 下载并安装插件
      // 5. 加载插件并通知渲染进程
    }
    ```
-
 3. **插件升级流程**（`PluginMarket.vue`）：
+
    ```typescript
    async function handleUpgradePlugin(plugin: Plugin) {
      // 1. 版本比较（compareVersions）
@@ -606,6 +618,7 @@ updater 重启应用
 **关键实现**（`src/main/api/updater.ts`）：
 
 1. **检查更新**：
+
    ```typescript
    private async checkUpdate(): Promise<any> {
      // 1. 获取蓝奏云文件夹列表（https://ilt.lanzouu.com/b0pn8htad，密码: 1f8i）
@@ -626,8 +639,8 @@ updater 重启应用
      return { hasUpdate: true, updateInfo }
    }
    ```
-
 2. **执行更新**：
+
    ```typescript
    private async startUpdate(updateInfo: any): Promise<any> {
      // 1. 根据平台选择下载链接
@@ -684,11 +697,12 @@ updater 重启应用
 **平台差异**：
 
 - **macOS**：
+
   - app.asar 位置：`Contents/Resources/app.asar`
   - updater 位置：`Contents/MacOS/ztools-updater`
   - 应用路径：`Contents/MacOS/zTools`
-
 - **Windows**：
+
   - app.asar 位置：`resources/app.asar`
   - updater 位置：应用根目录 `ztools-updater.exe`
   - 应用路径：`zTools.exe`
@@ -698,14 +712,10 @@ updater 重启应用
 ```json
 {
   "version": "1.0.9",
-  "downloadUrl": "https://ilt.lanzouu.com/...",      // 通用下载链接
+  "downloadUrl": "https://ilt.lanzouu.com/...", // 通用下载链接
   "downloadUrlWin64": "https://ilt.lanzouu.com/...", // Windows x64 专用
-  "downloadUrlMacArm": "https://ilt.lanzouu.com/...",// macOS Apple Silicon 专用
-  "changelog": [
-    "修复 Bug A",
-    "新增功能 B",
-    "优化性能 C"
-  ]
+  "downloadUrlMacArm": "https://ilt.lanzouu.com/...", // macOS Apple Silicon 专用
+  "changelog": ["修复 Bug A", "新增功能 B", "优化性能 C"]
 }
 ```
 
@@ -737,9 +747,11 @@ updater 重启应用
 
 ### 修改搜索逻辑
 
-- `src/renderer/src/stores/appDataStore.ts` - 搜索引擎和数据加载（Command 类型系统）
+- `src/renderer/src/stores/commandDataStore.ts` - 搜索引擎和数据加载（Command 类型系统）
 - `src/renderer/src/components/SearchResults.vue` - 搜索结果展示和键盘导航
 - `src/main/core/systemSettings/windowsSettings.ts` - Windows 系统设置定义
+- `src/main/core/commandScanner/` - 指令扫描器（macOS/Windows）
+- `src/main/core/commandLauncher/` - 指令启动器（macOS/Windows）
 
 ### 修改数据持久化
 
@@ -765,6 +777,7 @@ updater 重启应用
 
 ### 修改插件市场功能
 
+- `src/main/api/renderer/commands.ts` - 指令管理 API 实现
 - `src/main/api/renderer/plugins.ts` - 插件市场 API 实现
   - `fetchPluginMarket()` - 获取插件市场列表
   - `installPluginFromMarket()` - 从市场安装插件
@@ -801,10 +814,10 @@ updater 重启应用
 在 `src/main/api/{shared|renderer}/xxx.ts` 中添加 handler：
 
 ```typescript
-// 例如：在 src/main/api/renderer/apps.ts 中添加新功能
+// 例如：在 src/main/api/renderer/commands.ts 中添加新功能
 import { ipcMain } from 'electron'
 
-export class AppsAPI {
+export class CommandsAPI {
   private mainWindow: Electron.BrowserWindow | null = null
 
   public init(mainWindow: Electron.BrowserWindow, pluginManager: any): void {
@@ -960,16 +973,24 @@ class APIManager {
 <button class="btn">默认按钮</button>
 
 <!-- 尺寸变体 -->
-<button class="btn btn-sm">小按钮</button>    <!-- padding: 4px 12px, font-size: 12px -->
-<button class="btn btn-md">中按钮</button>    <!-- padding: 6px 14px, font-size: 13px -->
-<button class="btn btn-lg">大按钮</button>    <!-- padding: 10px 20px, font-size: 15px -->
+<button class="btn btn-sm">小按钮</button>
+<!-- padding: 4px 12px, font-size: 12px -->
+<button class="btn btn-md">中按钮</button>
+<!-- padding: 6px 14px, font-size: 13px -->
+<button class="btn btn-lg">大按钮</button>
+<!-- padding: 10px 20px, font-size: 15px -->
 
 <!-- 类型变体（悬浮时显示对应颜色）-->
-<button class="btn btn-primary">主要操作</button>   <!-- 蓝色/主题色 -->
-<button class="btn btn-danger">删除操作</button>    <!-- 红色 -->
-<button class="btn btn-warning">警告操作</button>   <!-- 黄色 -->
-<button class="btn btn-success">成功操作</button>   <!-- 绿色 -->
-<button class="btn btn-purple">特殊操作</button>    <!-- 紫色 -->
+<button class="btn btn-primary">主要操作</button>
+<!-- 蓝色/主题色 -->
+<button class="btn btn-danger">删除操作</button>
+<!-- 红色 -->
+<button class="btn btn-warning">警告操作</button>
+<!-- 黄色 -->
+<button class="btn btn-success">成功操作</button>
+<!-- 绿色 -->
+<button class="btn btn-purple">特殊操作</button>
+<!-- 紫色 -->
 
 <!-- 实心按钮（默认就显示主题色背景）-->
 <button class="btn btn-solid">确认</button>
@@ -984,22 +1005,26 @@ class APIManager {
 项目提供两种图标按钮样式，适用于不同场景：
 
 **`.btn-icon`** - 32x32 有边框图标按钮
+
 ```vue
 <button class="btn btn-icon" title="重置">
   <svg width="20" height="20">...</svg>
 </button>
 ```
+
 - 尺寸：32x32px
 - 样式：有边框、有背景色
 - 用途：通用设置、详情页等需要明显按钮的场景
 - 图标建议尺寸：18-20px
 
 **`.icon-btn`** - 28x28 透明背景图标按钮
+
 ```vue
 <button class="icon-btn open-btn" title="打开">
   <svg width="14" height="14">...</svg>
 </button>
 ```
+
 - 尺寸：28x28px
 - 样式：无边框、透明背景（悬浮时显示背景）
 - 用途：列表操作、插件市场等紧凑场景
@@ -1013,6 +1038,7 @@ class APIManager {
 ```
 
 状态：
+
 - 默认：中性色背景和边框
 - 悬浮：`--hover-bg` 背景
 - 聚焦：`--primary-color` 边框 + `--primary-light-bg` 背景
@@ -1100,20 +1126,24 @@ class APIManager {
 #### CSS 变量参考
 
 **控件相关**：
+
 - `--control-bg` - 控件默认背景色
 - `--control-border` - 控件默认边框色
 - `--hover-bg` - 悬浮时的背景色
 - `--primary-light-bg` - 主题色浅背景（聚焦/激活状态）
 
 **主题色**：
+
 - `--primary-color` - 当前主题色（可动态切换）
 - `--primary-hover` - 主题色悬浮态（自动计算）
 - `--danger-color` / `--warning-color` / `--success-color` / `--purple-color`
 
 **浅背景色**（用于按钮悬浮）：
+
 - `--primary-light-bg` / `--danger-light-bg` / `--warning-light-bg` / `--success-light-bg` / `--purple-light-bg`
 
 **文本和其他**：
+
 - `--text-color` - 主要文本颜色
 - `--text-secondary` - 次要文本颜色
 - `--text-on-primary` - 主题色上的文本颜色（白色）
@@ -1121,6 +1151,7 @@ class APIManager {
 - `--divider-color` - 分割线颜色
 
 **重要提醒**：
+
 - 不要在组件中重复定义控件样式，应该使用通用类
 - 保持一致性，所有新增控件应遵循相同的视觉和交互模式
 - 所有控件自动适配亮色/暗色主题
@@ -1214,9 +1245,12 @@ window.exports = {
         const minutes = parseInt(match[1])
         window.ztools.showNotification(`⏰ 定时器已启动：${minutes} 分钟`)
 
-        setTimeout(() => {
-          window.ztools.showNotification('⏰ 时间到！')
-        }, minutes * 60 * 1000)
+        setTimeout(
+          () => {
+            window.ztools.showNotification('⏰ 时间到！')
+          },
+          minutes * 60 * 1000
+        )
 
         // 可选：保存到数据库
         const timers = (await window.ztools.db.get('active-timers')) || []
@@ -1284,7 +1318,7 @@ window.exports = {
   - `WindowManager` - 窗口管理和模拟粘贴（macOS ✅ / Windows ✅）
   - `ScreenCapture` - 区域截图（macOS ❌ / Windows ✅）
 
-**应用扫描**（`src/main/core/appScanner/`）：
+**指令扫描**（`src/main/core/commandScanner/`）：
 
 - macOS: 扫描 `.app` 文件（通过 plist 获取元数据）
 - Windows: 扫描 `.lnk` 快捷方式和开始菜单
@@ -1292,15 +1326,15 @@ window.exports = {
 **平台特定限制**：
 
 - **macOS**：
+
   - 区域截图功能暂不支持
   - 窗口标识符：`bundleId` (string)
   - 系统设置功能暂不支持（仅 Windows）
-
 - **Windows**：
+
   - 窗口标识符：`processId` (number)
   - 区域截图已支持
   - 系统设置功能已支持（38 个 ms-settings 指令）
-
 - **Linux**：暂不支持（需要实现 `linuxScanner.ts` 和对应的原生模块）
 
 **系统设置集成（Windows 专属）**：
@@ -1322,7 +1356,7 @@ window.exports = {
 
 ### 搜索性能
 
-- `getApps()` 每次都扫描系统应用，考虑缓存 + 增量更新
+- `getCommands()` 每次都扫描系统指令，考虑缓存 + 增量更新
 - Fuse.js 搜索阈值设置为 0
 - 正则匹配需要检查 `minLength`，避免短查询性能问题
 
