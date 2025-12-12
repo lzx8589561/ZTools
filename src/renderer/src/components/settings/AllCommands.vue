@@ -330,17 +330,16 @@ function hasIconError(cmd: any): boolean {
   return iconErrors.value.has(key)
 }
 
-// 获取插件功能数量（功能指令 + 匹配指令）
+// 获取插件功能数量（所有唯一的 featureCode）
 function getPluginCommandCount(plugin: any): number {
-  const textFeatureCodes = new Set<string>()
-  const matchFeatureCodes = new Set<string>()
+  const allFeatureCodes = new Set<string>()
 
   // 收集功能指令的 featureCode
   allCommands.value
     .filter((c) => c.type === 'plugin' && c.path === plugin.path && c.featureCode)
     .forEach((c) => {
       if (c.featureCode) {
-        textFeatureCodes.add(c.featureCode)
+        allFeatureCodes.add(c.featureCode)
       }
     })
 
@@ -349,12 +348,12 @@ function getPluginCommandCount(plugin: any): number {
     .filter((c) => c.path === plugin.path && c.featureCode)
     .forEach((c) => {
       if (c.featureCode) {
-        matchFeatureCodes.add(c.featureCode)
+        allFeatureCodes.add(c.featureCode)
       }
     })
 
-  // 返回两个 Tab 的功能数量之和
-  return textFeatureCodes.size + matchFeatureCodes.size
+  // 返回唯一功能数量（同一个 feature 不会被计数两次）
+  return allFeatureCodes.size
 }
 
 // 选择来源
