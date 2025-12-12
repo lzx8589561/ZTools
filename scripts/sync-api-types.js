@@ -47,7 +47,7 @@ const REPLACEMENTS = [
 
   // 组织和项目名称
   { from: /uTools-Labs/gi, to: 'ZTools-Labs' },
-  
+
   // 描述文本（但保留一些特定的）
   { from: /\buTools\b/g, to: 'ZTools' }
 ]

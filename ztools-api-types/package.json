@@ -1,6 +1,6 @@
 {
   "name": "@ztools-center/ztools-api-types",
-  "version": "1.0.3",
+  "version": "1.0.2",
   "description": "ZTools API 代码提示 （直接Copy uTools的，部分API未完成适配）",
   "main": "index.d.ts",
   "types": "index.d.ts",

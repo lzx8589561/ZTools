@@ -376,12 +376,6 @@ interface ZToolsApi {
    */
   setExpendHeight(height: number): boolean;
   /**
-   * 调整窗口大小（兼容 uTools API）
-   * @param width 窗口宽度（当前版本忽略此参数）
-   * @param height 窗口高度
-   */
-  resizeWindow(width: number, height: number): boolean;
-  /**
    * 设置子输入框
    * @param onChange 修改时触发
    * @param placeholder 占位符， 默认为空
