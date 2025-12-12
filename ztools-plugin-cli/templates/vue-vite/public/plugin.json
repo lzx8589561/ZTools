@@ -8,7 +8,7 @@
   "preload": "preload/services.js",
   "logo": "logo.png",
   "development": {
-    "main": "http://localhost:5173"
+    "main": "http://localhost:5174"
   },
   "features": [
     {
