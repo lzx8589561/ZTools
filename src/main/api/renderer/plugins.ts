@@ -204,6 +204,17 @@ export class PluginsAPI {
       plugins.push(pluginInfo)
       await databaseAPI.dbPut('plugins', plugins)
 
+      // 输出新增的指令
+      console.log('\n=== 新增插件指令 ===')
+      console.log(`插件名称: ${pluginConfig.name}`)
+      console.log(`插件版本: ${pluginConfig.version}`)
+      console.log('新增指令列表:')
+      pluginConfig.features.forEach((feature: any, index: number) => {
+        console.log(`  [${index + 1}] ${feature.code} - ${feature.explain || '无说明'}`)
+        console.log(`      关键词: ${feature.cmds.join(', ')}`)
+      })
+      console.log('==================\n')
+
       this.mainWindow?.webContents.send('plugins-changed')
       return { success: true, plugin: pluginInfo }
     } catch (error: unknown) {
@@ -291,6 +302,18 @@ export class PluginsAPI {
       if (!plugins) plugins = []
       plugins.push(pluginInfo)
       await databaseAPI.dbPut('plugins', plugins)
+
+      // 输出新增的指令
+      console.log('\n=== 新增开发中插件指令 ===')
+      console.log(`插件名称: ${pluginConfig.name}`)
+      console.log(`插件版本: ${pluginConfig.version}`)
+      console.log(`开发模式: ${pluginConfig.development?.main || '无'}`)
+      console.log('新增指令列表:')
+      pluginConfig.features.forEach((feature: any, index: number) => {
+        console.log(`  [${index + 1}] ${feature.code} - ${feature.explain || '无说明'}`)
+        console.log(`      关键词: ${feature.cmds.join(', ')}`)
+      })
+      console.log('=========================\n')
 
       this.mainWindow?.webContents.send('plugins-changed')
       return { success: true }
