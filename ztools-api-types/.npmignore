@@ -1,0 +1,8 @@
+*.log
+node_modules/
+.DS_Store
+test/
+examples/
+tsconfig.json
+SYNC_GUIDE.md
+.git

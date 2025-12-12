@@ -8,3 +8,6 @@ out
 .vscode/launch.json
 .vscode/settings.json
 /.history
+
+# uTools 源码缓存（用于同步 API Types）
+.ztools-api-types-source/

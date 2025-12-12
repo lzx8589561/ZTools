@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://u.tools/docs/plugin.json",
+  "title": "ZTools 插件配置文件",
+  "description": "ZTools 插件配置文件，用于描述插件的基本信息，以及插件的入口文件。",
+  "type": "object",
+  "properties": {
+    "main": {
+      "type": "string",
+      "description": "入口文件，当该配置为空时，表示插件应用为模板插件应用。 main 与 preload 至少存在其一。"
+    },
+    "preload": {
+      "type": "string",
+      "description": "这是一个关键文件，你可以在此文件内调用 ZTools、 nodejs、 electron 提供的 api。 main 与 preload 至少存在其一。"
+    },
+    "logo": {
+      "type": "string",
+      "description": "插件图标，支持png,jpg格式"
+    },
+    "development": {
+      "type": "object",
+      "properties": {
+        "main": {
+          "type": "string",
+          "description": "入口文件，当该配置为空时，表示插件应用为模板插件应用。 main 与 preload 至少存在其一。"
+        }
+      }
+    },
+    "pluginSetting": {
+      "type": "object",
+      "properties": {
+        "single": {
+          "type": "boolean",
+          "description": "插件应用是否允许多开（默认不允许）。多开方式：分离插件应用后，再次创建。"
+        },
+        "height": {
+          "type": "number",
+          "description": "插件应用高度。可动态修改（参考），该项被设置后，用户则不能再调整高度。最小值为 1 。"
+        }
+      }
+    },
+    "features": {
+      "type": "array",
+      "description": "features 描述了当 ZTools 主输入框内容产生变化时，此插件应用是否显示在搜索结果列表中，一个插件应用可以有多个功能，一个功能可以提供多个命令供用户搜索。",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "插件应用提供的某个功能的唯一标示，此为必选项，且插件应用内不可重复。"
+          },
+          "explain": {
+            "type": "string",
+            "description": "对此功能的说明，将在搜索列表对应位置中显示。"
+          },
+          "icon": {
+            "type": "string",
+            "description": "此功能的图标，支持png,jpg,svg格式。"
+          },
+          "mainPush": {
+            "type": "boolean"
+          },
+          "mainHide": {
+            "type": "boolean",
+            "description": "设置为 `true` 时，打开对应的 `feature` 不主动弹出搜索框窗口"
+          },
+          "cmds": {
+            "type": "array",
+            "description": "该功能下可响应的命令集，支持 6 种类型，由 cmds 的类型或 cmds.type 决定。",
+            "items": {
+              "type": ["string", "object"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "类型",
+                  "enum": ["regex", "over", "img", "files", "window"]
+                },
+                "label": {
+                  "type": "string",
+                  "description": "关键字"
+                },
+                "match": {
+                  "type": ["string", "object"],
+                  "description": "匹配模式",
+                  "properties": {
+                    "app": {
+                      "type": "array"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "class": {
+                      "type": "array"
+                    }
+                  }
+                },
+                "minLength": {
+                  "type": "number",
+                  "description": "最小匹配长度",
+                  "minimum": 1
+                },
+                "maxLength": {
+                  "type": "number",
+                  "description": "最大匹配长度",
+                  "minimum": 1,
+                  "maximum": 10000
+                },
+                "fileType": {
+                  "type": "string",
+                  "description": "文件类型",
+                  "enum": ["file", "directory"]
+                },
+                "extensions": {
+                  "type": "array",
+                  "description": "文件扩展名",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

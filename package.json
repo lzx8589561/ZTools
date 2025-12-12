@@ -28,7 +28,9 @@
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
     "build:mac:update": "npm run build && electron-builder --mac --dir",
-    "build:linux": "npm run build && electron-builder --linux"
+    "build:linux": "npm run build && electron-builder --linux",
+    "sync-api-types": "node scripts/sync-api-types.js",
+    "check-api-types": "node -p \"require('./ztools-api-types/package.json')['utools-version']\""
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
