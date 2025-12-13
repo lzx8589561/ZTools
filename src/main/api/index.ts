@@ -15,6 +15,7 @@ import windowAPI from './renderer/window'
 
 // 插件专用API
 import pluginClipboardAPI from './plugin/clipboard'
+import pluginDeviceAPI from './plugin/device'
 import pluginDialogAPI from './plugin/dialog'
 import { pluginFeatureAPI } from './plugin/feature'
 import pluginInputAPI from './plugin/input'
@@ -55,6 +56,7 @@ class APIManager {
     pluginLifecycleAPI.init(mainWindow, pluginManager)
     pluginUIAPI.init(mainWindow, pluginManager)
     pluginClipboardAPI.init()
+    pluginDeviceAPI.init()
     pluginDialogAPI.init(mainWindow)
     pluginWindowAPI.init(mainWindow, pluginManager)
     pluginScreenAPI.init()

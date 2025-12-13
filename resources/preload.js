@@ -17,14 +17,16 @@ const pluginOutCallbacks = []
 const osType = electron.ipcRenderer.sendSync('get-os-type')
 
 window.ztools = {
-  getNativeId: () => "1234567890",
-  getAppVersion: () => "7.3.0",
   getAppName: () => "zTools",
   // 平台检测
   isMacOs: () => osType === 'Darwin',
   isMacOS: () => osType === 'Darwin',
   isWindows: () => osType === 'Windows_NT',
   isLinux: () => osType === 'Linux',
+  // 获取设备唯一标识符（32位字符串）
+  getNativeId: () => electron.ipcRenderer.sendSync('get-native-id'),
+  // 获取应用版本号
+  getAppVersion: () => electron.ipcRenderer.sendSync('get-app-version'),
   // 是否深色主题
   isDarkColors: () => electron.ipcRenderer.sendSync('is-dark-colors'),
   sendInputEvent: async (event) => await electron.ipcRenderer.invoke('send-input-event', event),
