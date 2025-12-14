@@ -285,7 +285,16 @@ window.ztools = {
   shellShowItemInFolder: (fullPath) =>
     electron.ipcRenderer.sendSync('shell-show-item-in-folder', fullPath),
   // 插件跳转
-  redirect: (label, payload) => electron.ipcRenderer.sendSync('ztools-redirect', { label, payload })
+  redirect: (label, payload) => electron.ipcRenderer.sendSync('ztools-redirect', { label, payload }),
+  // HTTP 请求头设置
+  http: {
+    // 设置请求头
+    setHeaders: (headers) => electron.ipcRenderer.sendSync('http-set-headers', headers),
+    // 获取当前请求头配置
+    getHeaders: () => electron.ipcRenderer.sendSync('http-get-headers'),
+    // 清除请求头配置
+    clearHeaders: () => electron.ipcRenderer.sendSync('http-clear-headers')
+  }
 }
 
 electron.ipcRenderer.on('on-plugin-enter', (event, launchParam) => {

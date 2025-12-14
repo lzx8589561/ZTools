@@ -20,6 +20,8 @@ interface DynamicFeaturesData {
  */
 export class PluginFeatureAPI {
   private pluginManager: any = null
+  private notifyTimer: NodeJS.Timeout | null = null
+  private readonly NOTIFY_DEBOUNCE_DELAY = 3000 // 3秒防抖延迟
 
   public init(pluginManager: any): void {
     this.pluginManager = pluginManager
@@ -54,6 +56,7 @@ export class PluginFeatureAPI {
     // 设置动态 feature
     ipcMain.on('set-feature', (event, feature: DynamicFeature) => {
       try {
+        console.log('set-feature', feature)
         const pluginName = this.getPluginName(event)
         if (!pluginName) {
           event.returnValue = { success: false, error: 'Plugin not found' }
@@ -99,6 +102,7 @@ export class PluginFeatureAPI {
     // 删除动态 feature
     ipcMain.on('remove-feature', (event, code: string) => {
       try {
+        console.log('remove-feature', code)
         const pluginName = this.getPluginName(event)
         if (!pluginName) {
           event.returnValue = false
@@ -180,13 +184,24 @@ export class PluginFeatureAPI {
   }
 
   /**
-   * 通知渲染进程插件列表已变化
+   * 通知渲染进程插件列表已变化（带防抖处理）
+   * 如果3秒内没有新的通知请求，才会真正发送通知
    */
   private notifyPluginsChanged(): void {
-    const mainWindow = windowManager.getMainWindow()
-    if (mainWindow) {
-      mainWindow.webContents.send('plugins-changed')
+    // 如果已有定时器在运行，清除它
+    if (this.notifyTimer) {
+      clearTimeout(this.notifyTimer)
+      this.notifyTimer = null
     }
+
+    // 设置新的定时器，3秒后执行实际通知
+    this.notifyTimer = setTimeout(() => {
+      const mainWindow = windowManager.getMainWindow()
+      if (mainWindow) {
+        mainWindow.webContents.send('plugins-changed')
+      }
+      this.notifyTimer = null
+    }, this.NOTIFY_DEBOUNCE_DELAY)
   }
 
   /**

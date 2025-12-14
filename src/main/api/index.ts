@@ -18,6 +18,7 @@ import pluginClipboardAPI from './plugin/clipboard'
 import pluginDeviceAPI from './plugin/device'
 import pluginDialogAPI from './plugin/dialog'
 import { pluginFeatureAPI } from './plugin/feature'
+import pluginHttpAPI from './plugin/http'
 import pluginInputAPI from './plugin/input'
 import pluginLifecycleAPI from './plugin/lifecycle'
 import pluginRedirectAPI from './plugin/redirect'
@@ -64,6 +65,7 @@ class APIManager {
     pluginShellAPI.init()
     pluginRedirectAPI.init(mainWindow)
     pluginFeatureAPI.init(pluginManager)
+    pluginHttpAPI.init(pluginManager)
 
     // 初始化软件更新API
     updaterAPI.init(mainWindow)
