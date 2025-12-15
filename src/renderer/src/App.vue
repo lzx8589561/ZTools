@@ -24,6 +24,8 @@
         :pasted-files="pastedFilesData"
         :pasted-text="pastedTextData"
         @height-changed="updateWindowHeight"
+        @focus-input="handleFocusInput"
+        @restore-match="handleRestoreMatch"
       />
 
       <!-- 插件占位区域 -->
@@ -59,7 +61,7 @@ enum ViewMode {
 }
 
 const windowStore = useWindowStore()
-const appDataStore = useCommandDataStore()
+const commandDataStore = useCommandDataStore()
 
 const searchQuery = ref('')
 const isComposing = ref(false)
@@ -82,19 +84,13 @@ watch(searchQuery, (newValue) => {
   if (currentView.value === ViewMode.Plugin && windowStore.currentPlugin) {
     window.ztools.notifySubInputChange(newValue)
   }
-  // 输入变化时清除粘贴的图片、文件和文本
-  if (newValue) {
-    if (pastedImageData.value) pastedImageData.value = null
-    if (pastedFilesData.value) pastedFilesData.value = null
-    if (pastedTextData.value) pastedTextData.value = null
-  }
+  // 不再在输入时清除粘贴内容，允许文字和粘贴内容共存
 })
 
 // 监听粘贴图片数据变化
 watch(pastedImageData, (newValue) => {
-  // 粘贴图片时清空搜索框文本、文件和文本
+  // 粘贴图片时清空其他粘贴内容（但保留搜索框文本，用于搜索指令）
   if (newValue) {
-    searchQuery.value = ''
     pastedFilesData.value = null
     pastedTextData.value = null
   }
@@ -102,9 +98,8 @@ watch(pastedImageData, (newValue) => {
 
 // 监听粘贴文件数据变化
 watch(pastedFilesData, (newValue) => {
-  // 粘贴文件时清空搜索框文本、图片和文本
+  // 粘贴文件时清空其他粘贴内容（但保留搜索框文本，用于搜索指令）
   if (newValue) {
-    searchQuery.value = ''
     pastedImageData.value = null
     pastedTextData.value = null
   }
@@ -112,9 +107,8 @@ watch(pastedFilesData, (newValue) => {
 
 // 监听粘贴文本数据变化
 watch(pastedTextData, (newValue) => {
-  // 粘贴文本时清空搜索框文本、图片和文件
+  // 粘贴文本时清空其他粘贴内容（但保留搜索框文本，用于搜索指令）
   if (newValue) {
-    searchQuery.value = ''
     pastedImageData.value = null
     pastedFilesData.value = null
   }
@@ -128,6 +122,25 @@ function updateWindowHeight(): Promise<void> {
       const height = container.scrollHeight
       window.ztools.resizeWindow(height + 1)
     }
+  })
+}
+
+// 聚焦输入框（由 SearchResults 组件 emit）
+function handleFocusInput(): void {
+  searchBoxRef.value?.focus()
+}
+
+// 恢复上次匹配状态
+function handleRestoreMatch(state: any): void {
+  console.log('恢复上次匹配状态:', state)
+  // 恢复输入框状态
+  searchQuery.value = state.searchQuery || ''
+  pastedImageData.value = state.pastedImage || null
+  pastedFilesData.value = state.pastedFiles || null
+  pastedTextData.value = state.pastedText || null
+  // 聚焦输入框
+  nextTick(() => {
+    searchBoxRef.value?.focus()
   })
 }
 
@@ -296,7 +309,7 @@ onMounted(async () => {
   // 从 store 加载设置和应用数据
   await Promise.all([
     windowStore.loadSettings(),
-    appDataStore.initializeData() // 初始化应用历史记录和固定列表
+    commandDataStore.initializeData() // 初始化应用历史记录和固定列表
   ])
 
   // 初始调整窗口高度
@@ -310,7 +323,7 @@ onMounted(async () => {
 
     // 根据自动清空配置决定是否清空搜索框（会自动记录时间）
     const shouldClear = windowStore.shouldClearSearch()
-    
+
     if (shouldClear) {
       searchQuery.value = ''
       pastedImageData.value = null // 清除粘贴的图片
@@ -429,7 +442,11 @@ onMounted(async () => {
   window.ztools.onShowPluginPlaceholder(() => {
     console.log('显示插件占位区域')
     currentView.value = ViewMode.Plugin
+    // 清空搜索框和所有粘贴内容
     searchQuery.value = ''
+    pastedImageData.value = null
+    pastedFilesData.value = null
+    pastedTextData.value = null
   })
 
   // 监听显示设置页面事件
@@ -444,7 +461,11 @@ onMounted(async () => {
   // 监听应用启动事件（应用启动后）
   window.ztools.onAppLaunched(() => {
     console.log('应用已启动')
+    // 清空搜索框和所有粘贴内容
     searchQuery.value = ''
+    pastedImageData.value = null
+    pastedFilesData.value = null
+    pastedTextData.value = null
     currentView.value = ViewMode.Search
   })
 
@@ -476,14 +497,14 @@ onMounted(async () => {
   window.ztools.onPluginsChanged(async () => {
     console.log('插件列表已变化，重新加载指令列表和用户数据')
     // 并行刷新指令列表、历史记录和固定列表
-    await Promise.all([appDataStore.loadCommands(), appDataStore.reloadUserData()])
+    await Promise.all([commandDataStore.loadCommands(), commandDataStore.reloadUserData()])
   })
 
   // 监听应用目录变化事件（用户安装或删除应用后自动刷新）
   window.ztools.onAppsChanged(async () => {
     console.log('应用目录发生变化，重新加载指令列表')
     // 重新加载指令列表
-    await appDataStore.loadCommands()
+    await commandDataStore.loadCommands()
   })
 
   // 监听更新下载完成事件
@@ -546,5 +567,7 @@ onUnmounted(() => {
   flex: 1;
   /* min-height: 500px; */
   background: var(--hover-bg);
+  -webkit-app-region: no-drag; /* 禁止拖动窗口 */
+  user-select: none; /* 禁止选取文本 */
 }
 </style>

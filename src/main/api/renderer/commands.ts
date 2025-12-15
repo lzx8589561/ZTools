@@ -16,17 +16,33 @@ const execAsync = promisify(exec)
 const ICON_CACHE_DIR = path.join(app.getPath('userData'), 'icons')
 
 /**
+ * 上次匹配状态接口
+ */
+interface LastMatchState {
+  searchQuery: string
+  pastedImage: string | null
+  pastedFiles: any[] | null
+  pastedText: string | null
+  timestamp: number
+}
+
+/**
  * 应用管理API - 主程序专用
  */
 export class AppsAPI {
   private mainWindow: Electron.BrowserWindow | null = null
   private pluginManager: any = null
   private launchParam: any = null
+  private lastMatchState: LastMatchState | null = null
 
   public init(mainWindow: Electron.BrowserWindow, pluginManager: any): void {
     this.mainWindow = mainWindow
     this.pluginManager = pluginManager
     this.setupIPC()
+    // 异步加载上次匹配状态（不阻塞初始化）
+    this.loadLastMatchState().catch((error) => {
+      console.error('加载上次匹配状态失败:', error)
+    })
   }
 
   public getLaunchParam(): any {
@@ -51,6 +67,10 @@ export class AppsAPI {
     ipcMain.handle('update-pinned-order', (_event, newOrder: any[]) =>
       this.updatePinnedOrder(newOrder)
     )
+
+    // 上次匹配状态管理
+    ipcMain.handle('get-last-match-state', () => this.getLastMatchState())
+    ipcMain.handle('restore-last-match', () => this.restoreLastMatch())
   }
 
   /**
@@ -224,8 +244,38 @@ export class AppsAPI {
 
         console.log('启动插件:', { path, featureCode, name })
 
-        // 添加到历史记录
-        await this.addToHistory({ path, type, featureCode, param, name, cmdType })
+        // 判断是否为匹配指令，保存状态并添加"上次匹配"到历史记录
+        const isMatchCommand = ['img', 'over', 'files', 'regex'].includes(cmdType || '')
+        if (isMatchCommand && param) {
+          // 从param中提取完整的输入状态
+          const inputState = param.inputState || {}
+
+          // 保存上次匹配状态（内存+数据库）
+          this.lastMatchState = {
+            searchQuery: inputState.searchQuery || '',
+            pastedImage: inputState.pastedImage || null,
+            pastedFiles: inputState.pastedFiles || null,
+            pastedText: inputState.pastedText || null,
+            timestamp: Date.now()
+          }
+          console.log('保存上次匹配状态:', this.lastMatchState)
+          // 持久化到数据库
+          await this.saveLastMatchState()
+
+          // 先删除历史记录中旧的"上次匹配"
+          await this.removeFromHistory('special:last-match')
+
+          // 将"上次匹配"作为普通指令加入历史记录
+          await this.addToHistory({
+            path: 'special:last-match',
+            type: 'plugin',
+            name: '上次匹配',
+            cmdType: 'text'
+          })
+        } else {
+          // 非匹配指令，正常添加到历史记录
+          await this.addToHistory({ path, type, featureCode, param, name, cmdType })
+        }
 
         // 通知渲染进程准备显示插件占位区域
         this.mainWindow?.webContents.send('show-plugin-placeholder')
@@ -273,7 +323,6 @@ export class AppsAPI {
     try {
       const { path: appPath, type = 'app', featureCode, name: cmdName, cmdType } = options
 
-      // 所有指令都添加到历史记录（包括匹配指令）
       console.log('添加指令到历史记录:', cmdName, '类型:', cmdType || 'text')
 
       const now = Date.now()
@@ -281,7 +330,15 @@ export class AppsAPI {
       // 获取应用/插件信息
       let appInfo: any = null
 
-      if (type === 'plugin') {
+      // 特殊指令不需要查找应用信息，前端会处理显示
+      if (appPath.startsWith('special:')) {
+        appInfo = {
+          name: cmdName || appPath,
+          path: appPath,
+          type: 'builtin',
+          cmdType: cmdType || 'text'
+        }
+      } else if (type === 'plugin') {
         // 从插件列表中查找
         const dbPlugins = await this.getPluginsFromDB()
 
@@ -597,6 +654,49 @@ export class AppsAPI {
     } catch (error) {
       console.error('更新固定列表顺序失败:', error)
     }
+  }
+
+  /**
+   * 从数据库加载上次匹配状态
+   */
+  private async loadLastMatchState(): Promise<void> {
+    try {
+      const state = await databaseAPI.dbGet('last-match-state')
+      if (state) {
+        this.lastMatchState = state
+        console.log('加载上次匹配状态:', state)
+      }
+    } catch (error) {
+      console.log('加载上次匹配状态失败:', error)
+    }
+  }
+
+  /**
+   * 保存上次匹配状态到数据库
+   */
+  private async saveLastMatchState(): Promise<void> {
+    try {
+      if (this.lastMatchState) {
+        await databaseAPI.dbPut('last-match-state', this.lastMatchState)
+        console.log('保存上次匹配状态到数据库')
+      }
+    } catch (error) {
+      console.error('保存上次匹配状态失败:', error)
+    }
+  }
+
+  /**
+   * 获取上次匹配状态
+   */
+  private getLastMatchState(): LastMatchState | null {
+    return this.lastMatchState
+  }
+
+  /**
+   * 恢复上次匹配
+   */
+  private restoreLastMatch(): LastMatchState | null {
+    return this.lastMatchState
   }
 }
 

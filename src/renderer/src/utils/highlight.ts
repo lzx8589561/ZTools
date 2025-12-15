@@ -13,7 +13,7 @@ interface MatchInfo {
  * @returns 包含高亮标签的HTML字符串
  */
 export function highlightMatch(text: string, matches?: MatchInfo[]): string {
-  console.log('matches', matches)
+  console.log('highlightMatch - text:', text, 'matches:', matches)
   if (!matches || matches.length === 0) {
     return escapeHtml(text)
   }
@@ -22,6 +22,8 @@ export function highlightMatch(text: string, matches?: MatchInfo[]): string {
   const highlightIndices = new Set<number>()
 
   matches.forEach((match) => {
+    console.log('处理 match:', match.key, 'indices:', match.indices, 'value:', match.value)
+
     if (match.key === 'name') {
       // 直接使用 name 的索引
       match.indices.forEach(([start, end]) => {
@@ -29,14 +31,17 @@ export function highlightMatch(text: string, matches?: MatchInfo[]): string {
           highlightIndices.add(i)
         }
       })
+      console.log('name 匹配后的 highlightIndices:', Array.from(highlightIndices))
     } else if (match.key === 'pinyin') {
       // 拼音匹配: 需要映射拼音索引到中文字符索引
       const charIndices = mapPinyinToCharIndices(text, match.indices, false)
       charIndices.forEach((i) => highlightIndices.add(i))
+      console.log('pinyin 映射后的字符索引:', Array.from(charIndices))
     } else if (match.key === 'pinyinAbbr') {
       // 拼音首字母匹配: 需要映射首字母索引到中文字符索引
       const charIndices = mapPinyinToCharIndices(text, match.indices, true)
       charIndices.forEach((i) => highlightIndices.add(i))
+      console.log('pinyinAbbr 映射后的字符索引:', Array.from(charIndices))
     }
   })
 

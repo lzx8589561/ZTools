@@ -1,18 +1,13 @@
 <template>
-  <div class="search-box">
+  <div ref="searchBoxRef" class="search-box" @mousedown="handleMouseDown">
     <!-- 隐藏的测量元素,用于计算文本宽度 -->
     <div class="search-input-container">
       <!-- 粘贴的图片缩略图 -->
-      <div v-if="pastedImage" class="pasted-image-thumbnail" @click="clearPastedImage">
+      <div v-if="pastedImage" class="pasted-image-thumbnail">
         <img :src="pastedImage" alt="粘贴的图片" />
-        <div class="clear-icon">×</div>
       </div>
       <!-- 粘贴的文件显示 -->
-      <div
-        v-if="pastedFiles && pastedFiles.length > 0"
-        class="pasted-files"
-        @click="clearPastedFiles"
-      >
+      <div v-if="pastedFiles && pastedFiles.length > 0" class="pasted-files">
         <div class="file-icon">
           <svg
             width="16"
@@ -43,10 +38,9 @@
             >+{{ pastedFiles.length - 1 }}</span
           >
         </div>
-        <div class="clear-icon">×</div>
       </div>
       <!-- 粘贴的文本显示 -->
-      <div v-if="pastedText" class="pasted-text" @click="clearPastedText">
+      <div v-if="pastedText" class="pasted-text">
         <div class="text-icon">
           <svg
             width="16"
@@ -74,14 +68,20 @@
         <div class="text-info">
           <span class="text-content">{{ truncatedPastedText }}</span>
         </div>
-        <div class="clear-icon">×</div>
       </div>
       <span ref="measureRef" class="measure-text"></span>
+      <!-- 独立的占位符显示：只在没有任何内容且不在输入法组合状态时显示 -->
+      <div
+        v-if="!modelValue && !pastedImage && !pastedFiles && !pastedText && !isComposing"
+        class="placeholder-text"
+      >
+        {{ placeholderText }}
+      </div>
       <input
         ref="inputRef"
         type="text"
         :value="modelValue"
-        :placeholder="placeholderText"
+        placeholder=""
         class="search-input"
         @input="onInput"
         @compositionstart="onCompositionStart"
@@ -94,8 +94,9 @@
         @paste="handlePaste"
       />
     </div>
+
     <!-- 操作栏 -->
-    <div class="search-actions">
+    <div ref="searchActionsRef" class="search-actions">
       <!-- 更新提示（有下载好的更新时显示） -->
       <div
         v-if="windowStore.updateDownloadInfo.hasDownloaded && !windowStore.currentPlugin"
@@ -121,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useWindowStore } from '../../stores/windowStore'
 import UpdateIcon from './UpdateIcon.vue'
 
@@ -152,6 +153,9 @@ const emit = defineEmits<{
 }>()
 
 const windowStore = useWindowStore()
+
+const searchBoxRef = ref<HTMLDivElement | null>(null)
+const searchActionsRef = ref<HTMLDivElement | null>(null)
 
 const placeholderText = computed(() => {
   // 如果在插件模式下,使用子输入框的 placeholder
@@ -191,8 +195,29 @@ watch(
   () => composingText.value,
   (newValue) => {
     console.log('composingText 更改了', newValue)
-    measureRef.value!.textContent = newValue || placeholderText.value
-    updateInputWidth()
+    // 输入法组合中的文本也应该影响宽度
+    if (
+      newValue &&
+      measureRef.value &&
+      inputRef.value &&
+      searchBoxRef.value &&
+      searchActionsRef.value
+    ) {
+      measureRef.value.textContent = newValue
+      const width = measureRef.value.offsetWidth + 10
+
+      // 动态计算最大宽度
+      const searchBoxWidth = searchBoxRef.value.offsetWidth
+      const searchActionsWidth = searchActionsRef.value.offsetWidth
+      const gap = 8
+      const padding = 30
+      const maxWidth = searchBoxWidth - searchActionsWidth - gap - padding
+
+      inputRef.value.style.width = `${Math.min(width, maxWidth)}px`
+    } else {
+      // 组合文本为空时，使用正常的更新逻辑
+      updateInputWidth()
+    }
   }
 )
 
@@ -239,7 +264,16 @@ function onKeydown(event: KeyboardEvent): void {
       } else if (props.pastedFiles) {
         clearPastedFiles()
       } else if (props.pastedText) {
+        // 文本类型：填充到输入框并全选
+        const textContent = props.pastedText
         clearPastedText()
+        nextTick(() => {
+          emit('update:modelValue', textContent)
+          nextTick(() => {
+            // 全选文本
+            inputRef.value?.select()
+          })
+        })
       }
       return
     }
@@ -259,21 +293,45 @@ function keydownEvent(event: KeyboardEvent, direction: 'left' | 'right' | 'up' |
 // 处理粘贴事件
 async function handlePaste(event: ClipboardEvent): Promise<void> {
   try {
+    // 先阻止默认粘贴行为（因为是异步操作，必须在这里就阻止）
+    event.preventDefault()
+
     // 手动粘贴不需要时间限制
     const copiedContent = await window.ztools.getLastCopiedContent()
 
     if (copiedContent?.type === 'image') {
-      // 粘贴的是图片
-      event.preventDefault() // 阻止默认粘贴行为
+      // 粘贴的是图片 -> 作为匹配内容
       emit('update:pastedImage', copiedContent.data as string)
     } else if (copiedContent?.type === 'file') {
-      // 粘贴的是文件
-      event.preventDefault() // 阻止默认粘贴行为
+      // 粘贴的是文件 -> 作为匹配内容
       emit('update:pastedFiles', copiedContent.data as FileItem[])
     } else if (copiedContent?.type === 'text') {
-      // 粘贴的是文本
-      event.preventDefault() // 阻止默认粘贴行为
-      emit('update:pastedText', copiedContent.data as string)
+      // 粘贴的是文本 -> 检查是否有选中文字
+      const input = inputRef.value
+      const hasSelection =
+        input && input.selectionStart !== null && input.selectionStart !== input.selectionEnd
+
+      if (hasSelection) {
+        // 有选中文字 -> 手动插入文本（替换选中内容）
+        const text = copiedContent.data as string
+        const start = input!.selectionStart!
+        const end = input!.selectionEnd!
+        const currentValue = props.modelValue || ''
+        const newValue = currentValue.substring(0, start) + text + currentValue.substring(end)
+
+        emit('update:modelValue', newValue)
+
+        // 设置光标位置到插入文本的末尾
+        nextTick(() => {
+          if (input) {
+            const newCursorPos = start + text.length
+            input.setSelectionRange(newCursorPos, newCursorPos)
+          }
+        })
+      } else {
+        // 无选中文字 -> 作为粘贴内容（用于 over 类型匹配指令）
+        emit('update:pastedText', copiedContent.data as string)
+      }
     }
   } catch (error) {
     console.error('处理粘贴失败:', error)
@@ -304,6 +362,57 @@ function clearPastedText(): void {
   })
 }
 
+// 窗口拖拽 Composable
+interface DragHandlers {
+  onStart: (e: MouseEvent) => Promise<void>
+  cleanup: () => void
+}
+
+const useDrag = (): DragHandlers => {
+  let isDragging = false
+  let offsetX = 0
+  let offsetY = 0
+
+  const onMove = (e: MouseEvent): void => {
+    if (!isDragging) return
+    window.ztools.setWindowPosition(e.screenX - offsetX, e.screenY - offsetY)
+  }
+
+  const onEnd = (e: MouseEvent): void => {
+    if (!isDragging) return
+    isDragging = false
+    cleanup()
+
+    // 如果不是点击输入框或按钮，则聚焦输入框
+    const target = e.target as HTMLElement
+    if (!target.closest('input') && !target.closest('.search-actions')) {
+      inputRef.value?.focus()
+    }
+  }
+
+  const onStart = async (e: MouseEvent): Promise<void> => {
+    const target = e.target as HTMLElement
+    if (target === inputRef.value || target.closest('.search-actions')) return
+
+    const { x, y } = await window.ztools.getWindowPosition()
+    offsetX = e.screenX - x
+    offsetY = e.screenY - y
+    isDragging = true
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onEnd)
+  }
+
+  const cleanup = (): void => {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onEnd)
+  }
+
+  return { onStart, cleanup }
+}
+
+const { onStart: handleMouseDown, cleanup: cleanupDrag } = useDrag()
+
 // 获取第一个文件的名称（用于显示）
 function getFirstFileName(files: FileItem[]): string {
   if (files.length === 0) return ''
@@ -312,11 +421,32 @@ function getFirstFileName(files: FileItem[]): string {
 
 function updateInputWidth(): void {
   nextTick(() => {
-    if (measureRef.value) {
-      const width = measureRef.value.offsetWidth
-      // 使用原生设置宽度
-      inputRef.value!.style.width = `${width}px`
-      console.log('inputWidth.value', width)
+    if (measureRef.value && inputRef.value && searchBoxRef.value && searchActionsRef.value) {
+      let width: number
+      const minWidth = 2 // 最小宽度，确保光标可见
+
+      if (props.modelValue && props.modelValue.length > 0) {
+        // 有内容时，根据内容计算宽度
+        measureRef.value.textContent = props.modelValue
+        width = measureRef.value.offsetWidth + 10 // 添加光标和边距
+
+        // 动态计算最大宽度 = 父容器宽度 - 右侧操作栏宽度 - gap - padding
+        const searchBoxWidth = searchBoxRef.value.offsetWidth
+        const searchActionsWidth = searchActionsRef.value.offsetWidth
+        const gap = 8 // .search-box 的 gap
+        const padding = 30 // .search-box 的左右 padding (15 * 2)
+        const maxWidth = searchBoxWidth - searchActionsWidth - gap - padding
+
+        // 限制最大宽度
+        width = Math.min(width, maxWidth)
+      } else {
+        // 无内容时，使用最小宽度（确保光标可见）
+        width = minWidth
+      }
+
+      // 设置输入框宽度
+      inputRef.value.style.width = `${width}px`
+      console.log('inputWidth.value', width, 'hasContent', !!props.modelValue)
     }
   })
 }
@@ -325,22 +455,34 @@ function updateInputWidth(): void {
 watch(
   () => props.modelValue,
   () => {
-    measureRef.value!.textContent = props.modelValue || placeholderText.value
     updateInputWidth()
   }
 )
 
-// 监听 currentPlugin 变化
+// 监听 currentPlugin 变化（可能改变占位符，但不影响宽度计算）
 watch(
   () => windowStore.currentPlugin,
   () => {
-    measureRef.value!.textContent = props.modelValue || placeholderText.value
     updateInputWidth()
   }
 )
 
+// 用于清理的 ResizeObserver
+let resizeObserver: ResizeObserver | null = null
+
 onMounted(() => {
+  // 初始化输入框宽度（updateInputWidth 内部会根据是否有内容来决定宽度）
+  updateInputWidth()
+
   inputRef.value?.focus()
+
+  // 监听窗口大小变化，重新计算输入框最大宽度
+  resizeObserver = new ResizeObserver(() => {
+    updateInputWidth()
+  })
+  if (searchBoxRef.value) {
+    resizeObserver.observe(searchBoxRef.value)
+  }
 
   // 监听菜单命令
   window.ztools.onContextMenuCommand(async (command) => {
@@ -415,6 +557,11 @@ async function handleUpdateClick(): Promise<void> {
   }
 }
 
+onUnmounted(() => {
+  resizeObserver?.disconnect()
+  cleanupDrag()
+})
+
 defineExpose({
   focus: () => inputRef.value?.focus(),
   selectAll: () => inputRef.value?.select()
@@ -427,50 +574,67 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 8px;
-  -webkit-app-region: drag;
-  /* 整个区域默认可拖动 */
+  /* -webkit-app-region: drag; 暂时注释掉，测试 mousemove */
   position: relative;
   overflow: hidden; /* 防止内容溢出 */
   width: 100%; /* 确保宽度不超过父容器 */
+  z-index: 10; /* 确保在其他内容之上 */
+  user-select: none; /* 禁止选取文本 */
 }
 
 .measure-text {
   position: absolute;
   white-space: pre;
   font-size: 24px;
-  font-family: inherit;
+  line-height: 1.3; /* 与 .search-input 保持一致 */
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: inherit;
+  letter-spacing: inherit;
   pointer-events: none;
-  opacity: 0;
+  visibility: hidden;
+  left: -9999px;
+}
+
+.placeholder-text {
+  position: absolute;
+  color: #7a7a7a;
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1.3;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 暗色模式下的 placeholder 颜色 */
+@media (prefers-color-scheme: dark) {
+  .placeholder-text {
+    color: #aaaaaa;
+  }
 }
 
 .search-input {
-  flex: 1;
-  min-width: 0; /* 允许缩小到最小 */
-  max-width: 720px;
+  /* 移除 flex: 1，改为根据内容自动调整 */
+  width: auto; /* 将由 JS 动态设置 */
   height: 48px;
-  line-height: 48px;
+  line-height: 1.3; /* 降低行高，使文本更紧凑 */
   font-size: 24px;
   border: none;
   outline: none;
   background: transparent;
   color: var(--text-color);
   -webkit-app-region: no-drag;
+  user-select: text; /* 允许选取文本 */
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-.search-input::placeholder {
-  color: #7a7a7a;
-  font-size: 24px;
-  font-weight: 300;
-}
-
-/* 暗色模式下的 placeholder 颜色 */
-@media (prefers-color-scheme: dark) {
-  .search-input::placeholder {
-    color: #aaaaaa;
-  }
-}
+/* 移除了原生 placeholder 样式，因为现在使用独立的占位符元素 */
 
 .search-input-container {
   flex: 1;
@@ -479,6 +643,8 @@ defineExpose({
   gap: 8px;
   min-width: 0; /* 允许 flex 子元素缩小 */
   overflow: hidden; /* 防止内容溢出 */
+  position: relative; /* 为占位符提供定位上下文 */
+  /* 不设置 no-drag，继承父元素的 drag，整个区域可拖动 */
 }
 
 .pasted-image-thumbnail {
@@ -488,17 +654,8 @@ defineExpose({
   flex-shrink: 0; /* 图片缩略图不允许缩小，保持尺寸 */
   border-radius: 4px;
   overflow: hidden;
-  cursor: pointer;
-  transition: all 0.2s;
   -webkit-app-region: no-drag;
-}
-
-.pasted-image-thumbnail:hover {
-  opacity: 0.8;
-}
-
-.pasted-image-thumbnail:hover .clear-icon {
-  opacity: 1;
+  user-select: none; /* 不可选取 */
 }
 
 .pasted-image-thumbnail img {
@@ -521,19 +678,9 @@ defineExpose({
   border-radius: 4px;
   background: var(--control-bg);
   border: 1px solid var(--control-border);
-  cursor: pointer;
   transition: all 0.2s;
   -webkit-app-region: no-drag;
-}
-
-.pasted-files:hover,
-.pasted-text:hover {
-  background: var(--hover-bg);
-}
-
-.pasted-files:hover .clear-icon,
-.pasted-text:hover .clear-icon {
-  opacity: 1;
+  user-select: none; /* 不可选取文本 */
 }
 
 .file-icon,
@@ -570,28 +717,12 @@ defineExpose({
   flex-shrink: 0;
 }
 
-.clear-icon {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 20px;
-  height: 20px;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  border-radius: 0 0 0 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
 .search-actions {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0; /* 右侧按钮区域不允许缩小 */
+  -webkit-app-region: no-drag; /* 头像区域不可拖动 */
 }
 
 .update-notification {

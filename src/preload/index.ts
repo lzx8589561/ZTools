@@ -19,6 +19,8 @@ const api = {
   }) => ipcRenderer.invoke('launch', options),
   hideWindow: () => ipcRenderer.send('hide-window'),
   resizeWindow: (height: number) => ipcRenderer.send('resize-window', height),
+  getWindowPosition: () => ipcRenderer.invoke('get-window-position'),
+  setWindowPosition: (x: number, y: number) => ipcRenderer.send('set-window-position', x, y),
   setWindowOpacity: (opacity: number) => ipcRenderer.send('set-window-opacity', opacity),
   setTrayIconVisible: (visible: boolean) => ipcRenderer.invoke('set-tray-icon-visible', visible),
   setHideOnBlur: (hide: boolean) => ipcRenderer.invoke('set-hide-on-blur', hide),
@@ -173,7 +175,10 @@ const api = {
   // 获取环境版本信息 (Electron, Node, Chrome等)
   getSystemVersions: () => ipcRenderer.invoke('get-system-versions'),
   // 获取系统平台 (darwin, win32, linux)
-  getPlatform: () => ipcRenderer.sendSync('get-platform')
+  getPlatform: () => ipcRenderer.sendSync('get-platform'),
+  // 上次匹配状态管理
+  getLastMatchState: () => ipcRenderer.invoke('get-last-match-state'),
+  restoreLastMatch: () => ipcRenderer.invoke('restore-last-match')
 }
 
 contextBridge.exposeInMainWorld('ztools', api)

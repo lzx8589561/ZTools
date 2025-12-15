@@ -73,6 +73,8 @@ const activeMenu = ref('general')
   height: 500px; /* 固定高度 */
   background: var(--bg-color);
   border-top: 1px solid var(--divider-color);
+  -webkit-app-region: no-drag; /* 禁止拖动窗口 */
+  user-select: none; /* 禁止选取文本 */
 }
 
 /* 左侧菜单 */

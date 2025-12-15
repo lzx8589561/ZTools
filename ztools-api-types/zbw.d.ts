@@ -1,4 +1,4 @@
-declare module BrowserWindow {
+declare namespace BrowserWindow {
   interface WebPreferences {
     devTools?: boolean
     preload?: string

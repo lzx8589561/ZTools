@@ -234,7 +234,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useCommandDataStore } from '../../stores/commandDataStore'
 
-const appDataStore = useCommandDataStore()
+const commandDataStore = useCommandDataStore()
 
 interface Source {
   type?: string
@@ -252,8 +252,8 @@ const activeTab = ref<'text' | 'match'>('text')
 const iconErrors = ref<Set<string>>(new Set())
 
 // 所有指令
-const allCommands = computed(() => appDataStore.commands)
-const allRegexCommands = computed(() => appDataStore.regexCommands)
+const allCommands = computed(() => commandDataStore.commands)
+const allRegexCommands = computed(() => commandDataStore.regexCommands)
 
 // 统计
 const appCount = computed(

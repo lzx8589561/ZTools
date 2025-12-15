@@ -12,6 +12,7 @@ const enterCallbacks = []
 const clipboardChangeCallbacks = []
 const subInputChangeCallbacks = []
 const pluginOutCallbacks = []
+const mainPushCallbacks = []
 
 // 获取操作系统类型
 const osType = electron.ipcRenderer.sendSync('get-os-type')
@@ -44,6 +45,14 @@ window.ztools = {
     console.log('插件请求onPluginOut')
     if (callback && typeof callback === 'function') {
       pluginOutCallbacks.push(callback)
+    }
+  },
+  // 监听主进程推送消息
+  // TODO: 临时的，需要完善
+  onMainPush: async (callback) => {
+    console.log('插件请求onMainPush')
+    if (callback && typeof callback === 'function') {
+      mainPushCallbacks.push(callback)
     }
   },
   // 兼容旧api
@@ -318,6 +327,12 @@ electron.ipcRenderer.on('clipboard-change', (event, item) => {
 electron.ipcRenderer.on('sub-input-change', (event, details) => {
   console.log('子输入框变化:', details)
   subInputChangeCallbacks.forEach((cb) => cb(details))
+})
+
+// 监听主进程推送消息
+electron.ipcRenderer.on('main-push', (event, data) => {
+  console.log('收到主进程推送:', data)
+  mainPushCallbacks.forEach((cb) => cb(data))
 })
 
 // 监听主进程的插件方法调用请求（用于无界面插件）

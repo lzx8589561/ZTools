@@ -1022,4 +1022,4 @@ interface ZToolsApi {
   ai(option: ZToolsAiOption): ZToolsAiResult<ZToolsAiMessage>
 }
 
-declare var ztools: ZToolsApi
+declare let ztools: ZToolsApi

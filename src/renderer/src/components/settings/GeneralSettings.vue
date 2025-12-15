@@ -125,6 +125,28 @@
           @blur="handlePlaceholderChange"
           @keyup.enter="handlePlaceholderChange"
         />
+        <button
+          v-if="windowStore.placeholder !== defaultPlaceholder"
+          class="btn btn-icon"
+          title="重置"
+          @click="handleResetPlaceholder"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="1 0 18 18"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M14.5 9C14.5 11.4853 12.4853 13.5 10 13.5C7.51472 13.5 5.5 11.4853 5.5 9C5.5 6.51472 7.51472 4.5 10 4.5C11.6569 4.5 13.0943 5.41421 13.8536 6.75M14 4V7H11"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -271,7 +293,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useWindowStore } from '../../stores/windowStore'
+import { DEFAULT_PLACEHOLDER, useWindowStore } from '../../stores/windowStore'
 
 const windowStore = useWindowStore()
 
@@ -311,6 +333,9 @@ const customColor = ref('#db2777')
 
 // 头像默认值（用于重置）
 const defaultAvatar = new URL('../../assets/image/default.png', import.meta.url).href
+
+// 搜索框提示文字默认值（从 windowStore 导入）
+const defaultPlaceholder = DEFAULT_PLACEHOLDER
 
 // 显示的快捷键文本
 const displayHotkey = computed(() => {
@@ -464,13 +489,24 @@ async function handlePlaceholderChange(): Promise<void> {
   try {
     // 如果为空，恢复默认值
     if (!windowStore.placeholder.trim()) {
-      windowStore.updatePlaceholder('')
+      windowStore.updatePlaceholder(defaultPlaceholder)
     }
     // 保存到数据库
     await saveSettings()
     console.log('搜索框提示文字已更新:', windowStore.placeholder)
   } catch (error) {
     console.error('保存搜索框提示文字失败:', error)
+  }
+}
+
+// 重置搜索框提示文字
+async function handleResetPlaceholder(): Promise<void> {
+  try {
+    windowStore.updatePlaceholder(defaultPlaceholder)
+    await saveSettings()
+    console.log('搜索框提示文字已重置')
+  } catch (error) {
+    console.error('重置搜索框提示文字失败:', error)
   }
 }
 

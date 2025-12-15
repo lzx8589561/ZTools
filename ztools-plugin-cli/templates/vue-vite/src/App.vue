@@ -19,7 +19,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <Hello v-if="route === 'hello'" :enterAction="enterAction" />
-  <Read v-if="route === 'read'" :enterAction="enterAction" />
-  <Write v-if="route === 'write'" :enterAction="enterAction" />
+  <Hello v-if="route === 'hello'" :enter-action="enterAction" />
+  <Read v-if="route === 'read'" :enter-action="enterAction" />
+  <Write v-if="route === 'write'" :enter-action="enterAction" />
 </template>

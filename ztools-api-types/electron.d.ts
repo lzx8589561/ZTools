@@ -1,6 +1,6 @@
 declare module 'electron' {
   type ClipboardType = 'selection' | 'clipboard'
-  module clipboard {
+  namespace clipboard {
     function availableFormats(type?: ClipboardType): void
     function clear(type?: ClipboardType): void
     function has(fmt: string, type?: ClipboardType): boolean
@@ -36,7 +36,7 @@ declare module 'electron' {
     senderId: number
   }
   type UIpcSendEventListener<T extends any[]> = (event: UIpcSendEventInit, ...args: T) => void
-  module ipcRenderer {
+  namespace ipcRenderer {
     function on<T extends any[] = any[]>(channel: string, listener: UIpcSendEventListener<T>): void
     function once<T extends any[] = any[]>(
       channel: string,
@@ -46,13 +46,13 @@ declare module 'electron' {
     function sendTo<T extends any[] = any[]>(id: number, channel: string, ...args: T): void
   }
 
-  module contextBridge {}
+  namespace contextBridge {}
 
-  module webFrame {}
+  namespace webFrame {}
 
-  module shell {}
+  namespace shell {}
 
-  module nativeImage {
+  namespace nativeImage {
     type NativeImage = BrowserWindow.NativeImage
     function createEmpty(): NativeImage
     function createFromPath(path: string): NativeImage

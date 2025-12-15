@@ -2,6 +2,7 @@ import Fuse from 'fuse.js'
 import { defineStore } from 'pinia'
 import { pinyin } from 'pinyin-pro'
 import { nextTick, ref } from 'vue'
+import arrowBackwardIcon from '../assets/image/arrow-backward.png'
 
 // 正则匹配指令
 interface RegexCmd {
@@ -89,6 +90,16 @@ const HISTORY_DOC_ID = 'command-history'
 const PINNED_DOC_ID = 'pinned-commands'
 
 export const useCommandDataStore = defineStore('commandData', () => {
+  // ===== 特殊指令配置表 =====
+  const specialCommands: Record<string, Partial<Command>> = {
+    'special:last-match': {
+      name: '上次匹配',
+      icon: arrowBackwardIcon,
+      type: 'builtin',
+      cmdType: 'text'
+    }
+  }
+
   // 历史记录
   const history = ref<HistoryItem[]>([])
   // 固定指令
@@ -288,7 +299,7 @@ export const useCommandDataStore = defineStore('commandData', () => {
                 const cmdName = isMatchCmd ? cmd.label : cmd
 
                 if (isMatchCmd) {
-                  // 匹配指令项（regex、over、img、files、window）：不需要拼音搜索
+                  // 匹配指令项（regex、over、img、files、window）：也需要拼音搜索
                   regexItems.push({
                     name: cmdName,
                     path: plugin.path,
@@ -297,7 +308,17 @@ export const useCommandDataStore = defineStore('commandData', () => {
                     featureCode: feature.code,
                     pluginExplain: feature.explain,
                     matchCmd: cmd,
-                    cmdType: cmd.type // 标记匹配类型
+                    cmdType: cmd.type, // 标记匹配类型
+                    pinyin: pinyin(cmdName, { toneType: 'none', type: 'string' })
+                      .replace(/\s+/g, '')
+                      .toLowerCase(),
+                    pinyinAbbr: pinyin(cmdName, {
+                      pattern: 'first',
+                      toneType: 'none',
+                      type: 'string'
+                    })
+                      .replace(/\s+/g, '')
+                      .toLowerCase()
                   })
                 } else {
                   // 功能指令（文本类型）
@@ -427,16 +448,37 @@ export const useCommandDataStore = defineStore('commandData', () => {
   }
 
   // 搜索
-  function search(query: string): { bestMatches: SearchResult[]; regexMatches: SearchResult[] } {
+  function search(
+    query: string,
+    commandList?: SearchResult[]
+  ): { bestMatches: SearchResult[]; regexMatches: SearchResult[] } {
+    // 如果没有指定搜索范围，使用全局指令
+    const searchTarget = commandList || commands.value
+
     if (!query || !fuse.value) {
       return {
-        bestMatches: commands.value.filter((cmd) => cmd.type === 'direct' && cmd.subType === 'app'), // 无搜索时只显示应用
+        bestMatches: searchTarget.filter((cmd) => cmd.type === 'direct' && cmd.subType === 'app'), // 无搜索时只显示应用
         regexMatches: []
       }
     }
 
     // 1. Fuse.js 模糊搜索
-    const fuseResults = fuse.value.search(query)
+    // 如果指定了搜索范围，创建临时 Fuse 实例
+    const searchFuse = commandList
+      ? new Fuse(commandList, {
+          keys: [
+            { name: 'name', weight: 2 },
+            { name: 'pinyin', weight: 1.5 },
+            { name: 'pinyinAbbr', weight: 1 }
+          ],
+          threshold: 0,
+          ignoreLocation: true,
+          includeScore: true,
+          includeMatches: true
+        })
+      : fuse.value
+
+    const fuseResults = searchFuse.search(query)
     const bestMatches = fuseResults
       .map((r) => ({
         ...r.item,
@@ -502,6 +544,11 @@ export const useCommandDataStore = defineStore('commandData', () => {
           regexMatches.push(cmd)
         }
       }
+    }
+
+    // 如果指定了搜索范围（用于粘贴内容的二次搜索），不需要 regexMatches
+    if (commandList) {
+      return { bestMatches, regexMatches: [] }
     }
 
     // 分别返回模糊匹配和正则匹配结果
@@ -652,6 +699,18 @@ export const useCommandDataStore = defineStore('commandData', () => {
     return result
   }
 
+  // 在指定的指令列表中搜索（用于粘贴内容后的二次搜索）
+  // 统一使用 search 函数，只是传入不同的指令列表
+  function searchInCommands(commandList: SearchResult[], query: string): SearchResult[] {
+    if (!query || commandList.length === 0) {
+      return commandList
+    }
+
+    // 使用统一的 search 函数
+    const result = search(query, commandList)
+    return result.bestMatches
+  }
+
   // ==================== 历史记录相关 ====================
 
   // 保存历史记录到数据库
@@ -678,6 +737,13 @@ export const useCommandDataStore = defineStore('commandData', () => {
   function getRecentCommands(limit?: number): Command[] {
     // 同步历史记录数据，确保使用最新的路径和图标
     const syncedHistory = history.value.map((historyItem) => {
+      // 检查是否是特殊指令
+      const specialConfig = specialCommands[historyItem.path]
+      if (specialConfig) {
+        // 使用特殊指令配置覆盖历史记录中的数据
+        return { ...historyItem, ...specialConfig } as Command
+      }
+
       // 尝试从当前列表中找到
       const currentCommand = commands.value.find(
         (app) =>
@@ -813,6 +879,7 @@ export const useCommandDataStore = defineStore('commandData', () => {
     // 指令和搜索相关
     loadCommands,
     search,
+    searchInCommands,
     searchImageCommands,
     searchTextCommands,
     searchFileCommands,

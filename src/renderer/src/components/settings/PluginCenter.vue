@@ -181,7 +181,7 @@ import { useCommandDataStore } from '../../stores/commandDataStore'
 import Icon from '../common/Icon.vue'
 import PluginDetail from './PluginDetail.vue'
 
-const appDataStore = useCommandDataStore()
+const commandDataStore = useCommandDataStore()
 
 // 插件相关状态
 const plugins = ref<any[]>([])
@@ -364,7 +364,7 @@ async function handleReloadPlugin(plugin: any): Promise<void> {
       // 重新加载插件列表
       await loadPlugins()
       // 刷新搜索数据（重新加载指令列表）
-      await appDataStore.loadCommands()
+      await commandDataStore.loadCommands()
       alert('插件重载成功!')
     } else {
       alert(`插件重载失败: ${result.error}`)

@@ -1,5 +1,5 @@
 <template>
-  <div ref="scrollContainerRef" class="scrollable-content">
+  <div ref="scrollContainerRef" class="scrollable-content" @click="handleContainerClick">
     <!-- 无搜索时显示历史 -->
     <div
       v-if="!searchQuery.trim() && !pastedImage && !pastedText && !pastedFiles"
@@ -88,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useCommandDataStore } from '../../stores/commandDataStore'
 import { useWindowStore } from '../../stores/windowStore'
@@ -121,13 +122,20 @@ const windowStore = useWindowStore()
 
 const emit = defineEmits<{
   (e: 'height-changed'): void
+  (e: 'focus-input'): void
+  (e: 'restore-match', state: any): void
 }>()
 
 // 使用 store
-const appDataStore = useCommandDataStore()
+const commandDataStore = useCommandDataStore()
+
+// 解构响应式状态
+const { loading } = storeToRefs(commandDataStore)
+
+// 解构方法
 const {
-  loading,
   search,
+  searchInCommands,
   searchImageCommands,
   searchTextCommands,
   searchFileCommands,
@@ -138,7 +146,7 @@ const {
   isPinned,
   getPinnedCommands,
   updatePinnedOrder
-} = appDataStore
+} = commandDataStore
 
 // 内部状态
 const selectedRow = ref(0)
@@ -152,22 +160,33 @@ const scrollContainerRef = ref<HTMLElement>()
 
 // 搜索结果
 const internalSearchResults = computed(() => {
-  // 如果粘贴了图片,返回支持图片的指令
+  // 如果有粘贴内容，先获取匹配类型的指令
+  let matchedCommands: any[] | null = null
+
   if (props.pastedImage) {
-    console.log('searchImageCommands', searchImageCommands())
-    return searchImageCommands()
+    matchedCommands = searchImageCommands()
+    console.log('searchImageCommands', matchedCommands)
+  } else if (props.pastedText) {
+    matchedCommands = searchTextCommands(props.pastedText)
+    console.log('searchTextCommands', matchedCommands)
+  } else if (props.pastedFiles) {
+    matchedCommands = searchFileCommands(props.pastedFiles)
+    console.log('searchFileCommands', matchedCommands)
   }
-  // 如果粘贴了文本,返回支持文本的指令（根据文本长度过滤）
-  if (props.pastedText) {
-    console.log('searchTextCommands', searchTextCommands(props.pastedText))
-    return searchTextCommands(props.pastedText)
+
+  // 如果有匹配的指令列表（有粘贴内容）
+  if (matchedCommands) {
+    // 如果有搜索关键词，使用统一的搜索函数，但限制在匹配的指令中
+    if (props.searchQuery.trim()) {
+      const result = searchInCommands(matchedCommands, props.searchQuery)
+      console.log('在匹配指令中搜索', props.searchQuery, '结果:', result)
+      return result
+    }
+    // 没有搜索关键词，直接返回匹配的指令
+    return matchedCommands
   }
-  // 如果粘贴了文件,返回支持文件的指令（根据配置过滤）
-  if (props.pastedFiles) {
-    console.log('searchFileCommands', searchFileCommands(props.pastedFiles))
-    return searchFileCommands(props.pastedFiles)
-  }
-  // 否则正常搜索
+
+  // 否则正常搜索（无粘贴内容）
   const result = search(props.searchQuery)
   return result.bestMatches
 })
@@ -243,6 +262,7 @@ const finderActions = computed(() => {
 const displayApps = computed(() => {
   // 粘贴图片、文本或文件时不显示历史记录
   if (props.pastedImage || props.pastedText || props.pastedFiles) return []
+
   if (props.searchQuery.trim() === '') {
     return getRecentCommands()
   } else {
@@ -601,6 +621,15 @@ async function handleAppContextMenu(
 async function handleSelectApp(app: any): Promise<void> {
   console.log('选择应用:', app)
   try {
+    // 如果是"上次匹配"指令，执行恢复逻辑
+    if (app.path === 'special:last-match') {
+      const state = await window.ztools.restoreLastMatch()
+      if (state) {
+        emit('restore-match', state)
+      }
+      return
+    }
+
     // 构造 payload 和 type
     let payload: any = props.searchQuery
     let type = app.cmdType || 'text' // 默认使用 cmd 的类型
@@ -630,7 +659,22 @@ async function handleSelectApp(app: any): Promise<void> {
       cmdType: app.cmdType || 'text', // 传递 cmdType 用于判断是否添加历史
       param: {
         payload,
-        type // 传递 cmd 的实际类型
+        type, // 传递 cmd 的实际类型
+        // 传递完整的输入状态（用于匹配指令的状态保存）
+        inputState: {
+          searchQuery: props.searchQuery,
+          pastedImage: props.pastedImage,
+          // 将 pastedFiles 转换为纯对象数组，避免 Proxy 导致的序列化错误
+          pastedFiles: props.pastedFiles
+            ? props.pastedFiles.map((file) => ({
+                isFile: !file.isDirectory,
+                isDirectory: file.isDirectory,
+                name: file.name,
+                path: file.path
+              }))
+            : null,
+          pastedText: props.pastedText
+        }
       }
     })
   } catch (error) {
@@ -794,6 +838,17 @@ function resetSelection(): void {
   selectedCol.value = 0
 }
 
+// 点击容器聚焦输入框
+function handleContainerClick(event: MouseEvent): void {
+  // 如果点击的是指令卡片或其子元素，不聚焦输入框
+  const target = event.target as HTMLElement
+  if (target.closest('.app-item')) {
+    return
+  }
+  // 点击空白区域时聚焦输入框
+  emit('focus-input')
+}
+
 // 初始化
 onMounted(() => {
   // 监听上下文菜单命令
@@ -813,6 +868,7 @@ defineExpose({
   max-height: 541px; /* 600 - 59 (搜索框高度) */
   overflow-y: auto;
   overflow-x: hidden;
+  user-select: none; /* 禁止选取文本 */
 }
 
 .content-section {

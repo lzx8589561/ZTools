@@ -1,5 +1,16 @@
 // Ambient type declarations for renderer, so TS knows window.ztools
 
+/**
+ * 上次匹配状态接口
+ */
+interface LastMatchState {
+  searchQuery: string
+  pastedImage: string | null
+  pastedFiles: any[] | null
+  pastedText: string | null
+  timestamp: number
+}
+
 declare global {
   interface Window {
     ztools: {
@@ -16,6 +27,8 @@ declare global {
       }) => Promise<any>
       hideWindow: () => void
       resizeWindow: (height: number) => void
+      getWindowPosition: () => Promise<{ x: number; y: number }>
+      setWindowPosition: (x: number, y: number) => void
       setWindowOpacity: (opacity: number) => void
       setTrayIconVisible: (visible: boolean) => Promise<void>
       setHideOnBlur: (hide: boolean) => Promise<void>
@@ -184,9 +197,11 @@ declare global {
       getAppVersion: () => Promise<string>
       getSystemVersions: () => Promise<NodeJS.ProcessVersions>
       getPlatform: () => string
+      // 上次匹配状态管理
+      getLastMatchState: () => Promise<LastMatchState | null>
+      restoreLastMatch: () => Promise<LastMatchState | null>
     }
   }
 }
 
-export { };
-
+export {}

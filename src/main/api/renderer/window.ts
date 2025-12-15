@@ -16,6 +16,10 @@ export class WindowAPI {
   private setupIPC(): void {
     ipcMain.on('hide-window', () => this.hideWindow())
     ipcMain.on('resize-window', (_event, height: number) => this.resizeWindow(height))
+    ipcMain.handle('get-window-position', () => this.getWindowPosition())
+    ipcMain.on('set-window-position', (_event, x: number, y: number) =>
+      this.setWindowPosition(x, y)
+    )
     ipcMain.on('set-window-opacity', (_event, opacity: number) => this.setWindowOpacity(opacity))
     ipcMain.handle('set-tray-icon-visible', (_event, visible: boolean) =>
       this.setTrayIconVisible(visible)
@@ -54,6 +58,20 @@ export class WindowAPI {
       // 限制高度范围: 最小 59px, 最大 600px
       const newHeight = Math.max(59, Math.min(height, 600))
       this.mainWindow.setSize(width, newHeight)
+    }
+  }
+
+  public getWindowPosition(): { x: number; y: number } {
+    if (this.mainWindow) {
+      const [x, y] = this.mainWindow.getPosition()
+      return { x, y }
+    }
+    return { x: 0, y: 0 }
+  }
+
+  public setWindowPosition(x: number, y: number): void {
+    if (this.mainWindow) {
+      this.mainWindow.setPosition(x, y)
     }
   }
 
