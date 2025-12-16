@@ -379,10 +379,12 @@ export const useWindowStore = defineStore('window', () => {
         if (data.placeholder) {
           placeholder.value = data.placeholder
         }
-        // 只有自定义头像才从数据库加载，没有则使用打包的默认头像
-        if (data.avatar) {
+        // 只有自定义头像才从数据库加载
+        // 如果数据库中是默认头像路径（历史数据），不加载，使用内置的默认头像
+        if (data.avatar && data.avatar !== DEFAULT_AVATAR) {
           avatar.value = data.avatar
         }
+        // 否则使用内置的默认头像（已在初始化时设置）
         if (data.autoPaste) {
           autoPaste.value = data.autoPaste
         }

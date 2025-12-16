@@ -124,7 +124,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useWindowStore } from '../../stores/windowStore'
+import { useWindowStore, DEFAULT_AVATAR } from '../../stores/windowStore'
 import UpdateIcon from './UpdateIcon.vue'
 
 // FileItem 接口（从剪贴板管理器返回的格式）
@@ -187,7 +187,9 @@ const avatarUrl = computed(() => {
 
 // 判断是否是默认头像
 const isDefaultAvatar = computed(() => {
-  return avatarUrl.value.includes('default.png')
+  // 使用严格相等判断，而不是字符串包含判断
+  // 这样在打包后路径被处理时也能正确判断
+  return avatarUrl.value === DEFAULT_AVATAR
 })
 
 // 截断显示的粘贴文本（从中间截断，显示头尾）

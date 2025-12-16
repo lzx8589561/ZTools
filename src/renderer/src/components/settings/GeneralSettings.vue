@@ -294,7 +294,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { DEFAULT_PLACEHOLDER, useWindowStore } from '../../stores/windowStore'
+import { DEFAULT_PLACEHOLDER, DEFAULT_AVATAR, useWindowStore } from '../../stores/windowStore'
 
 const windowStore = useWindowStore()
 
@@ -340,8 +340,8 @@ const themeColors = [
 // 自定义颜色
 const customColor = ref('#db2777')
 
-// 头像默认值（用于重置）
-const defaultAvatar = new URL('../../assets/image/default.png', import.meta.url).href
+// 头像默认值（从 windowStore 导入，确保与搜索框判断逻辑一致）
+const defaultAvatar = DEFAULT_AVATAR
 
 // 搜索框提示文字默认值（从 windowStore 导入）
 const defaultPlaceholder = DEFAULT_PLACEHOLDER
