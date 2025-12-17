@@ -94,74 +94,19 @@
           <template
             v-if="selectedSource?.subType === 'app' || selectedSource?.subType === 'system-setting'"
           >
-            <div v-for="(cmd, index) in systemCommands" :key="index" class="card command-card">
-              <div class="command-icon">
-                <span v-if="cmd.icon && cmd.icon.length <= 2" class="icon-emoji">{{
-                  cmd.icon
-                }}</span>
-                <!-- 特殊图标使用渐变背景 -->
-                <div
-                  v-else-if="cmd.icon && !hasIconError(cmd) && cmd.needsIconFilter"
-                  class="adaptive-icon"
-                  :style="{ '--icon-url': `url(${cmd.icon})` }"
-                ></div>
-                <!-- 普通图标 -->
-                <img
-                  v-else-if="cmd.icon && !hasIconError(cmd)"
-                  :src="cmd.icon"
-                  draggable="false"
-                  @error="() => onIconError(cmd)"
-                />
-                <div v-else class="icon-placeholder">
-                  {{ cmd.name.charAt(0).toUpperCase() }}
-                </div>
-              </div>
-              <div class="command-details">
-                <div class="command-title">{{ cmd.name }}</div>
-                <div class="command-meta">
-                  <template v-if="cmd.subType === 'app'">
-                    <span class="meta-path">{{ cmd.path }}</span>
-                  </template>
-                  <template v-else-if="cmd.subType === 'system-setting'">
-                    <span v-if="cmd.category" class="meta-tag">{{ cmd.category }}</span>
-                    <span class="meta-path">{{ cmd.settingUri || cmd.path }}</span>
-                  </template>
-                </div>
-              </div>
-            </div>
+            <CommandCard v-for="(cmd, index) in systemCommands" :key="index" :command="cmd" />
           </template>
 
           <!-- 插件：按 feature 分组显示 -->
           <template v-else>
-            <div
+            <FeatureCard
               v-for="feature in groupedFeatures"
               v-show="feature.textCmds.length > 0"
               :key="feature.code"
-              class="card feature-card"
+              :feature="feature"
             >
-              <div class="feature-header">
-                <div v-if="feature.icon" class="feature-icon">
-                  <span v-if="feature.icon.length <= 2" class="icon-emoji">{{ feature.icon }}</span>
-                  <img
-                    v-else-if="!hasIconError(feature)"
-                    :src="feature.icon"
-                    draggable="false"
-                    @error="() => onIconError(feature)"
-                  />
-                  <div v-else class="icon-placeholder">
-                    {{ (feature.explain || feature.name).charAt(0).toUpperCase() }}
-                  </div>
-                </div>
-                <div class="feature-title">
-                  {{ feature.explain || feature.name }}
-                </div>
-              </div>
-              <div class="feature-commands">
-                <span v-for="(cmd, idx) in feature.textCmds" :key="idx" class="command-tag">
-                  {{ cmd.text }}
-                </span>
-              </div>
-            </div>
+              <CommandTag v-for="(cmd, idx) in feature.textCmds" :key="idx" :command="cmd" />
+            </FeatureCard>
           </template>
         </div>
 
@@ -173,71 +118,14 @@
           </div>
 
           <!-- 插件：按 feature 分组显示 -->
-          <div
+          <FeatureCard
             v-for="feature in groupedFeatures"
             v-show="feature.matchCmds.length > 0"
             :key="feature.code"
-            class="card feature-card"
+            :feature="feature"
           >
-            <div class="feature-header">
-              <div v-if="feature.icon" class="feature-icon">
-                <span v-if="feature.icon.length <= 2" class="icon-emoji">{{ feature.icon }}</span>
-                <img
-                  v-else-if="!hasIconError(feature)"
-                  :src="feature.icon"
-                  draggable="false"
-                  @error="() => onIconError(feature)"
-                />
-                <div v-else class="icon-placeholder">
-                  {{ (feature.explain || feature.name).charAt(0).toUpperCase() }}
-                </div>
-              </div>
-              <div class="feature-title">
-                {{ feature.explain || feature.name }}
-              </div>
-            </div>
-            <div class="feature-commands">
-              <span
-                v-for="(cmd, idx) in feature.matchCmds"
-                :key="idx"
-                :class="['command-tag', `tag-${cmd.type}`]"
-              >
-                <template v-if="cmd.type === 'regex'">
-                  <span class="tag-badge">{{ cmd.match.match }}</span>
-                  <span class="tag-badge">正则</span>
-                </template>
-                <template v-else-if="cmd.type === 'over'">
-                  <span class="tag-badge">{{ cmd.name }}</span>
-                  <span v-if="cmd.match" class="tag-badge"
-                    >长度 {{ cmd.match.minLength || 1 }}-{{ cmd.match.maxLength || 10000 }}</span
-                  >
-                  <span class="tag-badge">任意</span>
-                </template>
-                <template v-else-if="cmd.type === 'img'">
-                  <span class="tag-badge">{{ cmd.name }}</span>
-                  <span class="tag-badge">图片</span>
-                </template>
-                <template v-else-if="cmd.type === 'files'">
-                  <span class="tag-badge">{{ cmd.name }}</span>
-                  <span v-if="cmd.match.extensions" class="tag-badge"
-                    >{{ cmd.match.extensions.slice(0, 3).join(', ')
-                    }}{{ cmd.match.extensions.length > 3 ? '...' : '' }}</span
-                  >
-                  <span class="tag-badge">{{
-                    cmd.match.fileType === 'directory' ? '文件夹' : '文件'
-                  }}</span>
-                </template>
-                <template v-else-if="cmd.type === 'window'">
-                  <span class="tag-badge">{{ cmd.name }}</span>
-                  <span class="tag-badge">窗口</span>
-                </template>
-                <template v-else>
-                  <span class="tag-badge">{{ cmd.name }}</span>
-                  <span class="tag-badge">{{ cmd.type }}</span>
-                </template>
-              </span>
-            </div>
-          </div>
+            <CommandTag v-for="(cmd, idx) in feature.matchCmds" :key="idx" :command="cmd" />
+          </FeatureCard>
         </div>
       </div>
     </div>
@@ -247,6 +135,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useCommandDataStore, type Command } from '../../stores/commandDataStore'
+import CommandCard from './common/CommandCard.vue'
+import CommandTag from './common/CommandTag.vue'
+import FeatureCard from './common/FeatureCard.vue'
 
 const commandDataStore = useCommandDataStore()
 
@@ -261,9 +152,6 @@ interface Source {
 const plugins = ref<any[]>([])
 const selectedSource = ref<Source | null>(null)
 const activeTab = ref<'text' | 'match'>('text')
-
-// 记录图标加载失败的指令
-const iconErrors = ref<Set<string>>(new Set())
 
 // 所有指令
 const allCommands = computed(() => commandDataStore.commands)
@@ -389,24 +277,6 @@ const matchFeaturesCount = computed(() => {
   // 统计有匹配指令的功能数量
   return groupedFeatures.value.filter((f) => f.matchCmds.length > 0).length
 })
-
-// 图标加载失败处理
-function onIconError(item: any): void {
-  // item 可能是 cmd 或 feature
-  const key = item.code
-    ? `feature-${item.code}-${item.icon}` // feature 对象
-    : `${item.path}-${item.featureCode || ''}-${item.name}` // cmd 对象
-  iconErrors.value.add(key)
-  console.warn('图标加载失败:', item.name || item.explain || item.code)
-}
-
-// 检查图标是否加载失败
-function hasIconError(item: any): boolean {
-  const key = item.code
-    ? `feature-${item.code}-${item.icon}` // feature 对象
-    : `${item.path}-${item.featureCode || ''}-${item.name}` // cmd 对象
-  return iconErrors.value.has(key)
-}
 
 // 获取插件指令数量（功能指令 + 匹配指令）
 function getPluginCommandCount(plugin: any): number {

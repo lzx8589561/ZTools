@@ -43,6 +43,10 @@ const api = {
   fetchPluginMarket: () => ipcRenderer.invoke('fetch-plugin-market'),
   installPluginFromMarket: (plugin: any) =>
     ipcRenderer.invoke('install-plugin-from-market', plugin),
+  getPluginReadme: (pluginPath: string): Promise<any> =>
+    ipcRenderer.invoke('get-plugin-readme', pluginPath),
+  getPluginDbData: (pluginName: string): Promise<any> =>
+    ipcRenderer.invoke('get-plugin-db-data', pluginName),
   deletePlugin: (pluginPath: string) => ipcRenderer.invoke('delete-plugin', pluginPath),
   reloadPlugin: (pluginPath: string) => ipcRenderer.invoke('reload-plugin', pluginPath),
   getRunningPlugins: () => ipcRenderer.invoke('get-running-plugins'),

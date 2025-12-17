@@ -243,6 +243,151 @@
       stroke-linecap="round"
       stroke-linejoin="round"
     />
+
+    <!-- 正则表达式图标 -->
+    <path
+      v-if="name === 'regex'"
+      d="M4 7L7 4L10 7"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      v-if="name === 'regex'"
+      d="M14 7L17 4L20 7"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <circle
+      v-if="name === 'regex'"
+      cx="12"
+      cy="12"
+      r="3"
+      stroke="currentColor"
+      stroke-width="2"
+      fill="none"
+    />
+    <path
+      v-if="name === 'regex'"
+      d="M4 17L7 20L10 17"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      v-if="name === 'regex'"
+      d="M14 17L17 20L20 17"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- 文本图标（任意文本） -->
+    <path
+      v-if="name === 'text'"
+      d="M4 7V4H20V7"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      v-if="name === 'text'"
+      d="M9 20H15"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      v-if="name === 'text'"
+      d="M12 4V20"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- 图片图标 -->
+    <rect
+      v-if="name === 'image'"
+      x="3"
+      y="3"
+      width="18"
+      height="18"
+      rx="2"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <circle v-if="name === 'image'" cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+    <path
+      v-if="name === 'image'"
+      d="M21 15L16 10L5 21"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- 文件图标 -->
+    <path
+      v-if="name === 'file'"
+      d="M13 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V9L13 2Z"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      v-if="name === 'file'"
+      d="M13 2V9H20"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- 文件夹图标 -->
+    <path
+      v-if="name === 'folder'"
+      d="M22 19C22 19.5304 21.7893 20.0391 21.4142 20.4142C21.0391 20.7893 20.5304 21 20 21H4C3.46957 21 2.96086 20.7893 2.58579 20.4142C2.21071 20.0391 2 19.5304 2 19V5C2 4.46957 2.21071 3.96086 2.58579 3.58579C2.96086 3.21071 3.46957 3 4 3H9L11 6H20C20.5304 6 21.0391 6.21071 21.4142 6.58579C21.7893 6.96086 22 7.46957 22 8V19Z"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- 窗口图标 -->
+    <rect
+      v-if="name === 'window'"
+      x="3"
+      y="3"
+      width="18"
+      height="18"
+      rx="2"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      v-if="name === 'window'"
+      d="M3 9H21"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <circle v-if="name === 'window'" cx="7" cy="6" r="1" fill="currentColor" />
+    <circle v-if="name === 'window'" cx="10" cy="6" r="1" fill="currentColor" />
+    <circle v-if="name === 'window'" cx="13" cy="6" r="1" fill="currentColor" />
   </svg>
 </template>
 
@@ -259,6 +404,12 @@ defineProps<{
     | 'list'
     | 'close'
     | 'search'
+    | 'regex'
+    | 'text'
+    | 'image'
+    | 'file'
+    | 'folder'
+    | 'window'
   size?: number | string
 }>()
 </script>

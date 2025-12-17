@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js'
 import { defineStore } from 'pinia'
 import { pinyin } from 'pinyin-pro'
-import { nextTick, ref } from 'vue'
+import { ref } from 'vue'
 import arrowBackwardIcon from '../assets/image/arrow-backward.png'
 import baiduLogoIcon from '../assets/image/baidu-logo.png'
 import settingsFillIcon from '../assets/image/settings-fill.png'
@@ -260,10 +260,8 @@ export const useCommandDataStore = defineStore('commandData', () => {
             return cleanedItem
           })
 
-        history.value = []
-        nextTick(() => {
-          history.value = filteredData
-        })
+        // 直接赋值，避免先清空再设置导致的闪烁
+        history.value = filteredData
 
         // 数据迁移已完成，不再需要保存
         // needsSave 标记仅用于记录迁移日志

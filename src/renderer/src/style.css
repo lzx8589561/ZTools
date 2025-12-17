@@ -558,7 +558,11 @@ body {
   --adaptive-icon-hue: 180deg;
 }
 
-/* 全局滚动条样式优化 */
+/*
+ * 全局滚动条样式优化
+ * 注意：插件 WebContentsView 的滚动条样式在 src/main/core/globalStyles.ts 中定义
+ * 两者应保持一致
+ */
 ::-webkit-scrollbar {
   width: 6px !important;
   height: 6px !important;

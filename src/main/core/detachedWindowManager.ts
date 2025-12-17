@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, WebContentsView } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { v4 as uuidv4 } from 'uuid'
+import { GLOBAL_SCROLLBAR_CSS } from './globalStyles.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -89,6 +90,9 @@ class DetachedWindowManager {
           searchQuery: options.searchQuery || '', // 搜索框初始值
           searchPlaceholder: options.searchPlaceholder || '搜索...' // 搜索框占位符
         })
+
+        // 注入全局滚动条样式到独立窗口的标题栏
+        win.webContents.insertCSS(GLOBAL_SCROLLBAR_CSS)
 
         // 添加插件视图（在标题栏下方）
         const bounds = win.getContentBounds()

@@ -119,7 +119,6 @@ function handleAppsUpdate(newOrder: Command[]): void {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.2s;
 }
 
 .list-content {
@@ -156,7 +155,6 @@ function handleAppsUpdate(newOrder: Command[]): void {
   font-size: 14px;
   opacity: 0.6;
   user-select: none;
-  transition: opacity 0.2s;
   white-space: nowrap; /* 防止文本换行 */
 }
 

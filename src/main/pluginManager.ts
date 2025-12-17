@@ -6,6 +6,7 @@ import api from './api/index.js'
 
 import mainPreload from '../../resources/preload.js?asset'
 import detachedWindowManager from './core/detachedWindowManager.js'
+import { GLOBAL_SCROLLBAR_CSS } from './core/globalStyles.js'
 import pluginWindowManager from './core/pluginWindowManager.js'
 
 console.log('mainPreload', mainPreload)
@@ -241,6 +242,9 @@ class PluginManager {
       view.webContents.loadURL(pluginUrl)
       // 插件加载完成
       view.webContents.on('did-finish-load', async () => {
+        // 注入全局滚动条样式（如果插件没有自定义）
+        view.webContents.insertCSS(GLOBAL_SCROLLBAR_CSS)
+
         this.processPluginMode(pluginPath, featureCode, view)
       })
 

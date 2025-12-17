@@ -6,14 +6,14 @@ import { detectPackageManager } from './utils.js'
 
 const TEMPLATES: TemplateConfig[] = [
   {
-    name: 'react-vite',
-    display: 'React + TypeScript + Vite',
-    color: cyan
-  },
-  {
     name: 'vue-vite',
     display: 'Vue + TypeScript + Vite',
     color: green
+  },
+  {
+    name: 'react-vite',
+    display: 'React + TypeScript + Vite',
+    color: cyan
   },
   {
     name: 'preload-only',

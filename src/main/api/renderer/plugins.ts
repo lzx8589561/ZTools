@@ -3,6 +3,7 @@ import { app, dialog, ipcMain } from 'electron'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { normalizeIconPath } from '../../common/iconUtils'
+import lmdbInstance from '../../core/lmdb/lmdbInstance'
 import { sleep } from '../../utils/common.js'
 import { downloadFile } from '../../utils/download.js'
 import { getLanzouDownloadLink, getLanzouFolderFileList } from '../../utils/lanzou.js'
@@ -39,6 +40,12 @@ export class PluginsAPI {
     ipcMain.handle('fetch-plugin-market', () => this.fetchPluginMarket())
     ipcMain.handle('install-plugin-from-market', (_event, plugin: any) =>
       this.installPluginFromMarket(plugin)
+    )
+    ipcMain.handle('get-plugin-readme', (_event, pluginPath: string) =>
+      this.getPluginReadme(pluginPath)
+    )
+    ipcMain.handle('get-plugin-db-data', (_event, pluginName: string) =>
+      this.getPluginDbData(pluginName)
     )
     ipcMain.handle(
       'call-headless-plugin',
@@ -639,6 +646,61 @@ export class PluginsAPI {
     } catch (error: unknown) {
       console.error('从市场安装插件失败:', error)
       return { success: false, error: error instanceof Error ? error.message : '安装失败' }
+    }
+  }
+
+  // 获取插件 README.md 内容
+  private async getPluginReadme(
+    pluginPath: string
+  ): Promise<{ success: boolean; content?: string; error?: string }> {
+    try {
+      // 尝试不同的 README 文件名（大小写不敏感）
+      const possibleReadmeFiles = ['README.md', 'readme.md', 'Readme.md', 'README.MD']
+
+      for (const filename of possibleReadmeFiles) {
+        const readmePath = path.join(pluginPath, filename)
+        try {
+          const content = await fs.readFile(readmePath, 'utf-8')
+          return { success: true, content }
+        } catch {
+          // 继续尝试下一个文件名
+          continue
+        }
+      }
+
+      // 所有文件名都不存在
+      return { success: false, error: '未找到 README.md 文件' }
+    } catch (error: unknown) {
+      console.error('读取插件 README 失败:', error)
+      return { success: false, error: error instanceof Error ? error.message : '读取失败' }
+    }
+  }
+
+  // 获取插件存储的数据库数据
+  private async getPluginDbData(
+    pluginName: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      // 获取以插件名为前缀的所有数据
+      const prefix = `PLUGIN/${pluginName}/`
+      const allData = lmdbInstance.allDocs(prefix)
+
+      if (!allData || allData.length === 0) {
+        return { success: true, data: [] }
+      }
+
+      // 过滤并格式化数据
+      const formattedData = allData.map((item: any) => ({
+        id: item._id.substring(prefix.length), // 去除前缀
+        data: item.data,
+        rev: item._rev,
+        updatedAt: item.updatedAt || item._updatedAt
+      }))
+
+      return { success: true, data: formattedData }
+    } catch (error: unknown) {
+      console.error('获取插件数据失败:', error)
+      return { success: false, error: error instanceof Error ? error.message : '获取失败' }
     }
   }
 }

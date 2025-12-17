@@ -2,6 +2,7 @@ import { BrowserWindow, BrowserWindowConstructorOptions, session } from 'electro
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import mainPreload from '../../../resources/preload.js?asset'
+import { GLOBAL_SCROLLBAR_CSS } from './globalStyles'
 
 /**
  * 插件窗口信息
@@ -86,6 +87,9 @@ class PluginWindowManager {
 
     // 监听加载完成
     win.webContents.on('did-finish-load', () => {
+      // 注入全局滚动条样式
+      win.webContents.insertCSS(GLOBAL_SCROLLBAR_CSS)
+
       if (callbackId && !senderWebContents.isDestroyed()) {
         senderWebContents.send(`browser-window-loaded-${callbackId}`, windowId)
       }

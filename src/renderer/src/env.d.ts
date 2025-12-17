@@ -64,6 +64,16 @@ declare global {
         error?: string
         plugin?: any
       }>
+      getPluginReadme: (pluginPath: string) => Promise<{
+        success: boolean
+        content?: string
+        error?: string
+      }>
+      getPluginDbData: (pluginName: string) => Promise<{
+        success: boolean
+        data?: Array<{ id: string; data: any; rev?: string; updatedAt?: string }>
+        error?: string
+      }>
       deletePlugin: (pluginPath: string) => Promise<{ success: boolean; error?: string }>
       reloadPlugin: (pluginPath: string) => Promise<{ success: boolean; error?: string }>
       getRunningPlugins: () => Promise<string[]>
@@ -215,4 +225,5 @@ declare global {
   }
 }
 
-export {}
+export { }
+

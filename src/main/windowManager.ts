@@ -106,6 +106,26 @@ class WindowManager {
 
     this.mainWindow = new BrowserWindow(windowConfig)
 
+    // 禁用缩放功能
+    this.mainWindow.webContents.setZoomFactor(1.0) // 重置缩放为 100%
+    this.mainWindow.webContents.setVisualZoomLevelLimits(1, 1) // 禁用未来缩放
+
+    // 拦截缩放快捷键 (Ctrl+Plus, Ctrl+Minus, Ctrl+0, Ctrl+Wheel)
+    this.mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.control || input.meta) {
+        // 拦截 Ctrl/Cmd + Plus/Minus/0
+        if (
+          input.key === '=' ||
+          input.key === '+' ||
+          input.key === '-' ||
+          input.key === '_' ||
+          input.key === '0'
+        ) {
+          event.preventDefault()
+        }
+      }
+    })
+
     // 加载页面
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
       this.mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])

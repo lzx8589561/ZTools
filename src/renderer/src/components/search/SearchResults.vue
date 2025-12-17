@@ -748,9 +748,11 @@ async function handleContextMenuCommand(command: string): Promise<void> {
     try {
       const { path, featureCode } = JSON.parse(jsonStr)
       await removeFromHistory(path, featureCode)
-      // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
-      emit('height-changed')
-      emit('focus-input')
+      // Store 直接更新数据后，在 nextTick 中发送事件确保 DOM 已更新
+      nextTick(() => {
+        emit('height-changed')
+        emit('focus-input')
+      })
     } catch (error) {
       console.error('从历史记录删除失败:', error)
     }
@@ -759,9 +761,11 @@ async function handleContextMenuCommand(command: string): Promise<void> {
     try {
       const app = JSON.parse(appJson)
       await pinCommand(app)
-      // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
-      emit('height-changed')
-      emit('focus-input')
+      // Store 直接更新数据后，在 nextTick 中发送事件确保 DOM 已更新
+      nextTick(() => {
+        emit('height-changed')
+        emit('focus-input')
+      })
     } catch (error) {
       console.error('固定应用失败:', error)
     }
@@ -770,9 +774,11 @@ async function handleContextMenuCommand(command: string): Promise<void> {
     try {
       const { path, featureCode } = JSON.parse(jsonStr)
       await unpinCommand(path, featureCode)
-      // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
-      emit('height-changed')
-      emit('focus-input')
+      // Store 直接更新数据后，在 nextTick 中发送事件确保 DOM 已更新
+      nextTick(() => {
+        emit('height-changed')
+        emit('focus-input')
+      })
     } catch (error) {
       console.error('取消固定失败:', error)
     }
