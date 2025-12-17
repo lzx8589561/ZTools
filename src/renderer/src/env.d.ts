@@ -206,6 +206,12 @@ declare global {
       // 上次匹配状态管理
       getLastMatchState: () => Promise<LastMatchState | null>
       restoreLastMatch: () => Promise<LastMatchState | null>
+      // 文件系统检查（异步，通过主进程）
+      checkFilePaths: (
+        paths: string[]
+      ) => Promise<Array<{ path: string; isDirectory: boolean; exists: boolean }>>
+      // 获取拖放文件的路径（Electron webUtils）
+      getPathForFile: (file: File) => string
     }
   }
 }

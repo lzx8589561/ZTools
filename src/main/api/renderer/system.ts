@@ -35,6 +35,7 @@ export class SystemAPI {
       this.activateApp(identifier, type)
     )
     ipcMain.handle('reveal-in-finder', (_event, filePath: string) => this.revealInFinder(filePath))
+    ipcMain.handle('check-file-paths', (_event, paths: string[]) => this.checkFilePaths(paths))
 
     // UI
     ipcMain.handle('show-context-menu', (_event, menuItems) => this.showContextMenu(menuItems))
@@ -206,6 +207,37 @@ export class SystemAPI {
     } catch (error: unknown) {
       console.error('选择头像失败:', error)
       return { success: false, error: error instanceof Error ? error.message : '未知错误' }
+    }
+  }
+
+  private async checkFilePaths(
+    paths: string[]
+  ): Promise<Array<{ path: string; isDirectory: boolean; exists: boolean }>> {
+    try {
+      const results = await Promise.all(
+        paths.map(async (filePath) => {
+          try {
+            const stats = await fs.stat(filePath)
+            const result = {
+              path: filePath,
+              isDirectory: stats.isDirectory(),
+              exists: true
+            }
+            return result
+          } catch (error) {
+            console.log('主进程：文件不存在或无权访问:', filePath, error)
+            return {
+              path: filePath,
+              isDirectory: false,
+              exists: false
+            }
+          }
+        })
+      )
+      return results
+    } catch (error) {
+      console.error('主进程：检查文件路径失败:', error)
+      return []
     }
   }
 }

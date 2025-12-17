@@ -55,7 +55,7 @@ class DetachedWindowManager {
         frame: false, // 两个平台都无边框
         titleBarStyle: isMac ? 'hiddenInset' : undefined, // macOS 保留交通灯按钮
         ...(isMac && {
-          trafficLightPosition: { x: 15, y: 18 } // macOS 交通灯垂直居中（标题栏高度52px，按钮高度约20px，居中位置 (52-20)/2 = 16）
+          trafficLightPosition: { x: 15, y: 18 } // macOS 交通灯垂直居中
         }),
         resizable: true,
         minWidth: 400,
@@ -85,6 +85,7 @@ class DetachedWindowManager {
           pluginName,
           pluginLogo: options.logo,
           platform: process.platform,
+          title: options.title, // 窗口标题
           searchQuery: options.searchQuery || '', // 搜索框初始值
           searchPlaceholder: options.searchPlaceholder || '搜索...' // 搜索框占位符
         })

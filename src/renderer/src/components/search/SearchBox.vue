@@ -1,5 +1,7 @@
 <template>
   <div ref="searchBoxRef" class="search-box" @mousedown="handleMouseDown">
+    <!-- 拖放蒙版 -->
+    <div v-if="isDraggingOver" class="drag-overlay"></div>
     <!-- 隐藏的测量元素,用于计算文本宽度 -->
     <div class="search-input-container">
       <!-- 粘贴的图片缩略图 -->
@@ -211,6 +213,10 @@ const measureRef = ref<HTMLSpanElement>()
 const isComposing = ref(false) // 是否正在输入法组合
 const composingText = ref('') // 正在组合的文本
 
+// 拖放相关状态
+const isDraggingOver = ref(false) // 是否正在拖动文件到搜索框
+const dragCounter = ref(0) // 拖动计数器，处理嵌套元素的 dragenter/dragleave
+
 watch(
   () => composingText.value,
   (newValue) => {
@@ -376,6 +382,93 @@ async function handlePaste(event: ClipboardEvent): Promise<void> {
   }
 }
 
+// 拖放事件处理
+function handleDragEnter(event: DragEvent): void {
+  event.preventDefault()
+  event.stopPropagation()
+
+  dragCounter.value++
+  if (dragCounter.value === 1) {
+    isDraggingOver.value = true
+  }
+}
+
+function handleDragOver(event: DragEvent): void {
+  event.preventDefault()
+  event.stopPropagation()
+}
+
+function handleDragLeave(event: DragEvent): void {
+  event.preventDefault()
+  event.stopPropagation()
+
+  dragCounter.value--
+  if (dragCounter.value === 0) {
+    isDraggingOver.value = false
+  }
+}
+
+async function handleDrop(event: DragEvent): Promise<void> {
+  event.preventDefault()
+  event.stopPropagation()
+
+  // 重置拖放状态
+  isDraggingOver.value = false
+  dragCounter.value = 0
+
+  try {
+    // 获取拖放的文件
+    const files = event.dataTransfer?.files
+    if (!files || files.length === 0) {
+      console.log('没有文件被拖放')
+      return
+    }
+
+    // 提取文件路径
+    const paths: string[] = []
+    const names: string[] = []
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      // 使用 Electron webUtils 获取文件路径
+      try {
+        const filePath = window.ztools.getPathForFile(file)
+        if (filePath) {
+          paths.push(filePath)
+          names.push(file.name)
+        }
+      } catch (error) {
+        console.error('获取文件路径失败:', file.name, error)
+      }
+    }
+
+    if (paths.length === 0) {
+      console.log('没有有效的文件路径')
+      return
+    }
+
+    // 使用主进程提供的异步方法检查文件类型
+    const fileStats = await window.ztools.checkFilePaths(paths)
+
+    // 转换为 FileItem[] 格式
+    const fileItems: FileItem[] = fileStats
+      .filter((stat) => stat.exists)
+      .map((stat, index) => ({
+        path: stat.path,
+        name: names[index],
+        isDirectory: stat.isDirectory
+      }))
+
+    // 触发粘贴文件事件（和粘贴文件一样的处理）
+    if (fileItems.length > 0) {
+      emit('update:pastedFiles', fileItems)
+    } else {
+      console.log('没有有效的文件项')
+    }
+  } catch (error) {
+    console.error('处理拖放文件失败:', error)
+  }
+}
+
 // 处理点击粘贴文本框
 function handlePastedTextClick(): void {
   if (props.pastedText) {
@@ -536,6 +629,14 @@ onMounted(() => {
     resizeObserver.observe(searchBoxRef.value)
   }
 
+  // 添加拖放事件监听
+  if (searchBoxRef.value) {
+    searchBoxRef.value.addEventListener('dragenter', handleDragEnter)
+    searchBoxRef.value.addEventListener('dragover', handleDragOver)
+    searchBoxRef.value.addEventListener('dragleave', handleDragLeave)
+    searchBoxRef.value.addEventListener('drop', handleDrop)
+  }
+
   // 监听菜单命令
   window.ztools.onContextMenuCommand(async (command) => {
     if (command === 'open-devtools') {
@@ -612,6 +713,14 @@ async function handleUpdateClick(): Promise<void> {
 onUnmounted(() => {
   resizeObserver?.disconnect()
   cleanupDrag()
+
+  // 清理拖放事件监听
+  if (searchBoxRef.value) {
+    searchBoxRef.value.removeEventListener('dragenter', handleDragEnter)
+    searchBoxRef.value.removeEventListener('dragover', handleDragOver)
+    searchBoxRef.value.removeEventListener('dragleave', handleDragLeave)
+    searchBoxRef.value.removeEventListener('drop', handleDrop)
+  }
 })
 
 defineExpose({
@@ -632,6 +741,28 @@ defineExpose({
   width: 100%; /* 确保宽度不超过父容器 */
   z-index: 10; /* 确保在其他内容之上 */
   user-select: none; /* 禁止选取文本 */
+}
+
+/* 拖放蒙版 */
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  pointer-events: none;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .measure-text {

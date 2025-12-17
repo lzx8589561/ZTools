@@ -72,7 +72,7 @@ class WindowManager {
 
     // 根据平台设置不同的窗口配置
     const windowConfig: Electron.BrowserWindowConstructorOptions = {
-      // type: 'panel',
+      type: 'panel',
       title: 'ZTools',
       width: 800,
       minWidth: 800,
@@ -331,16 +331,16 @@ class WindowManager {
   private toggleWindow(): void {
     if (!this.mainWindow) return
 
-    const isVisible = this.mainWindow.isVisible()
-    console.log(`切换窗口状态 - 当前可见性: ${isVisible}`)
+    const isFocused = this.mainWindow.isFocused()
+    console.log(`切换窗口状态 - 当前可见性: ${isFocused}`)
 
-    // 使用 isVisible() 判断窗口是否显示，更可靠
-    if (isVisible) {
+    // 判断窗口是否聚焦显示
+    if (isFocused) {
       // 窗口已显示 → 隐藏
       console.log('隐藏窗口')
       this.mainWindow.blur()
       this.mainWindow.hide()
-      this.restorePreviousWindow()
+      // this.restorePreviousWindow() // 该用panel窗体不会失焦
     } else {
       // 窗口已隐藏 → 显示
       console.log('显示窗口')

@@ -105,6 +105,11 @@ onMounted(() => {
     pluginName.value = data.pluginName
     pluginLogo.value = data.pluginLogo
 
+    // 设置窗口标题
+    if (data.title) {
+      document.title = data.title
+    }
+
     // 设置搜索框初始值
     searchQuery.value = data.searchQuery || ''
     console.log('插件 Logo:', pluginLogo.value, '搜索框初始值:', searchQuery.value)

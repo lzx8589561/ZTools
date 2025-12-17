@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 export interface Command {
   name: string
@@ -178,7 +178,11 @@ const api = {
   getPlatform: () => ipcRenderer.sendSync('get-platform'),
   // 上次匹配状态管理
   getLastMatchState: () => ipcRenderer.invoke('get-last-match-state'),
-  restoreLastMatch: () => ipcRenderer.invoke('restore-last-match')
+  restoreLastMatch: () => ipcRenderer.invoke('restore-last-match'),
+  // 文件系统检查（异步，通过主进程）
+  checkFilePaths: (paths: string[]) => ipcRenderer.invoke('check-file-paths', paths),
+  // 获取拖放文件的路径（Electron webUtils）
+  getPathForFile: (file: File) => webUtils.getPathForFile(file)
 }
 
 contextBridge.exposeInMainWorld('ztools', api)
@@ -186,11 +190,13 @@ contextBridge.exposeInMainWorld('ztools', api)
 // 为标题栏暴露 electron API
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
-    send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args),
+    send: (channel: string, ...args: any[]): void => ipcRenderer.send(channel, ...args),
     on: (channel: string, callback: (...args: any[]) => void): (() => void) => {
-      const subscription = (_event: any, ...args: any[]) => callback(...args)
+      const subscription = (_event: any, ...args: any[]): void => callback(...args)
       ipcRenderer.on(channel, subscription)
-      return () => ipcRenderer.removeListener(channel, subscription)
+      return (): void => {
+        ipcRenderer.removeListener(channel, subscription)
+      }
     }
   }
 })
