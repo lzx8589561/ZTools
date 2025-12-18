@@ -68,7 +68,8 @@ export function replaceTemplateVarsInDir(dir: string, vars: Record<string, strin
       file.endsWith('.json') ||
       file.endsWith('.ts') ||
       file.endsWith('.tsx') ||
-      file.endsWith('.vue')
+      file.endsWith('.vue') ||
+      file.endsWith('.md')
     ) {
       replaceTemplateVars(filePath, vars)
     }
