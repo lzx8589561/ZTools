@@ -44,7 +44,6 @@
     "electron-log": "^5.4.3",
     "extract-file-icon": "^0.3.2",
     "fuse.js": "^7.0.0",
-    "get-installed-apps": "^1.1.1",
     "lmdb": "^3.4.4",
     "marked": "^17.0.1",
     "pinia": "^3.0.4",
