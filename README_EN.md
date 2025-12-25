@@ -128,6 +128,17 @@ ZTools supports one-click in-app updates without manual download:
 
 ## 🧩 Plugin Development
 
+ZTools is a powerful and extensible plugin platform that enhances your productivity with custom plugins. With simple configuration, rich APIs, and cross-platform support, you can easily develop powerful plugins.
+
+**Plugin System Features**:
+
+- 📝 **Simple Configuration** - Easily define plugins through standard `plugin.json` files, no complex setup required
+- 🔌 **Rich APIs** - Access system capabilities through the global `ztools` object, including notifications, simulated input, and persistent storage
+- 🎯 **Flexible Commands** - Trigger your plugins using text, regex, or global hooks to adapt to any workflow
+- 🌍 **Cross-Platform** - Build once, run on Windows, macOS, and Linux with a consistent experience across all devices
+
+> 📖 **Full Documentation**: Visit [ZTools Developer Documentation](https://ztoolscenter.github.io/ZTools-doc/) for more details
+
 ZTools provides a complete plugin system supporting two types:
 
 ### UI Plugins
