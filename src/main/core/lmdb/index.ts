@@ -178,6 +178,14 @@ export default class LmdbDatabase {
   }
 
   /**
+   * 获取元数据数据库实例（用于高级查询）
+   * @returns 元数据数据库实例
+   */
+  getMetaDb(): any {
+    return this.metaDb
+  }
+
+  /**
    * 关闭数据库
    */
   close(): void {

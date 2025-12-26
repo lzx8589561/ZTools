@@ -332,11 +332,22 @@ export class SyncApi {
         // 前缀模式：使用 getRange 进行范围查询
         const prefix = key || ''
 
+        // 计算范围查询的结束边界
+        let endPrefix: string | undefined
+        if (prefix) {
+          const lastChar = prefix[prefix.length - 1]
+          const nextChar = String.fromCharCode(lastChar.charCodeAt(0) + 1)
+          endPrefix = prefix.slice(0, -1) + nextChar
+        }
+
         // 使用 lmdb-js 的 getRange 方法
-        for (const { key: currentKey, value: docStr } of this.mainDb.getRange({
-          start: prefix
-        })) {
-          // 检查是否仍在前缀范围内
+        const rangeOptions: any = { start: prefix }
+        if (endPrefix) {
+          rangeOptions.end = endPrefix
+        }
+
+        for (const { key: currentKey, value: docStr } of this.mainDb.getRange(rangeOptions)) {
+          // 双重检查：确保 key 完全匹配前缀
           if (!currentKey.startsWith(prefix)) {
             break
           }

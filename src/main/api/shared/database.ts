@@ -405,6 +405,16 @@ export class DatabaseAPI {
   }
 
   /**
+   * 计算字典序的下一个前缀（用于精确的范围查询）
+   * 例如：prefix = "PLUGIN/test/" -> end = "PLUGIN/test0"
+   */
+  private getNextPrefix(prefix: string): string {
+    const lastChar = prefix[prefix.length - 1]
+    const nextChar = String.fromCharCode(lastChar.charCodeAt(0) + 1)
+    return prefix.slice(0, -1) + nextChar
+  }
+
+  /**
    * 获取所有插件的数据统计（供内部调用）
    */
   private async _getPluginDataStats(): Promise<{
@@ -432,14 +442,21 @@ export class DatabaseAPI {
       }
 
       const attachmentDb = lmdbInstance.getAttachmentDb()
-      for (const { key } of attachmentDb.getRange({ start: 'attachment-ext:PLUGIN/' })) {
-        if (!key.startsWith('attachment-ext:PLUGIN/')) break
-        const match = key.match(/^attachment-ext:PLUGIN\/([^/]+)\//)
-        if (match) {
-          const pluginName = match[1]
-          const stats = pluginStats.get(pluginName) || { docCount: 0, attachmentCount: 0 }
-          stats.attachmentCount++
-          pluginStats.set(pluginName, stats)
+      const attachmentPrefix = 'attachment-ext:PLUGIN/'
+
+      for (const { key } of attachmentDb.getRange({
+        start: attachmentPrefix,
+        end: this.getNextPrefix(attachmentPrefix)
+      })) {
+        // 双重检查：确保 key 完全匹配前缀
+        if (key.startsWith(attachmentPrefix)) {
+          const match = key.match(/^attachment-ext:PLUGIN\/([^/]+)\//)
+          if (match) {
+            const pluginName = match[1]
+            const stats = pluginStats.get(pluginName) || { docCount: 0, attachmentCount: 0 }
+            stats.attachmentCount++
+            pluginStats.set(pluginName, stats)
+          }
         }
       }
 
@@ -471,20 +488,39 @@ export class DatabaseAPI {
   ): Promise<{ success: boolean; data?: Array<{ key: string; type: string }>; error?: string }> {
     try {
       const prefix = `PLUGIN/${pluginName}/`
+
+      // 使用 Set 去重（避免重复添加）
+      const keySet = new Set<string>()
+      const keyTypeMap = new Map<string, 'document' | 'attachment'>()
+
+      // 1. 从主数据库获取文档 key
       const allDocs = lmdbInstance.allDocs(prefix)
+      for (const doc of allDocs) {
+        const key = doc._id.substring(prefix.length)
+        keySet.add(key)
+        keyTypeMap.set(key, 'document')
+      }
 
-      const keys = allDocs.map((doc) => ({
-        key: doc._id.substring(prefix.length),
-        type: 'document'
-      }))
-
+      // 2. 从附件数据库获取附件 key
       const attachmentDb = lmdbInstance.getAttachmentDb()
       const attachmentPrefix = `attachment-ext:${prefix}`
-      for (const { key } of attachmentDb.getRange({ start: attachmentPrefix })) {
-        if (!key.startsWith(attachmentPrefix)) break
-        const attachmentKey = key.substring(attachmentPrefix.length)
-        keys.push({ key: attachmentKey, type: 'attachment' })
+
+      for (const { key } of attachmentDb.getRange({
+        start: attachmentPrefix,
+        end: this.getNextPrefix(attachmentPrefix)
+      })) {
+        if (key.startsWith(attachmentPrefix)) {
+          const attachmentKey = key.substring(attachmentPrefix.length)
+          keySet.add(attachmentKey)
+          keyTypeMap.set(attachmentKey, 'attachment')
+        }
       }
+
+      // 3. 转换为数组
+      const keys = Array.from(keySet).map((key) => ({
+        key,
+        type: keyTypeMap.get(key) || 'document'
+      }))
 
       return { success: true, data: keys }
     } catch (error: unknown) {
@@ -542,6 +578,8 @@ export class DatabaseAPI {
       const allDocs = lmdbInstance.allDocs(prefix)
 
       let deletedCount = 0
+
+      // 1. 删除主数据库和元数据库的文档
       for (const doc of allDocs) {
         const result = lmdbInstance.remove(doc._id)
         if (result.ok) {
@@ -549,20 +587,45 @@ export class DatabaseAPI {
         }
       }
 
+      // 2. 清理可能残留的元数据（主数据已删除但 meta 还在的情况）
+      const metaDb = lmdbInstance.getMetaDb()
+      const metaKeysToDelete: string[] = []
+      for (const { key } of metaDb.getRange({
+        start: prefix,
+        end: this.getNextPrefix(prefix)
+      })) {
+        if (key.startsWith(prefix)) {
+          metaKeysToDelete.push(key)
+        }
+      }
+
+      for (const key of metaKeysToDelete) {
+        metaDb.removeSync(key)
+      }
+
+      // 3. 删除附件数据库的附件和元数据
       const attachmentDb = lmdbInstance.getAttachmentDb()
-      const attachmentPrefix = `attachment:`
-      const metadataPrefix = `attachment-ext:`
+      const attachmentPrefix = `attachment:${prefix}`
+      const metadataPrefix = `attachment-ext:${prefix}`
 
       const attachmentKeysToDelete: string[] = []
-      for (const { key } of attachmentDb.getRange({ start: attachmentPrefix + prefix })) {
-        if (!key.startsWith(attachmentPrefix + prefix)) break
-        attachmentKeysToDelete.push(key)
+      for (const { key } of attachmentDb.getRange({
+        start: attachmentPrefix,
+        end: this.getNextPrefix(attachmentPrefix)
+      })) {
+        if (key.startsWith(attachmentPrefix)) {
+          attachmentKeysToDelete.push(key)
+        }
       }
 
       const metadataKeysToDelete: string[] = []
-      for (const { key } of attachmentDb.getRange({ start: metadataPrefix + prefix })) {
-        if (!key.startsWith(metadataPrefix + prefix)) break
-        metadataKeysToDelete.push(key)
+      for (const { key } of attachmentDb.getRange({
+        start: metadataPrefix,
+        end: this.getNextPrefix(metadataPrefix)
+      })) {
+        if (key.startsWith(metadataPrefix)) {
+          metadataKeysToDelete.push(key)
+        }
       }
 
       for (const key of attachmentKeysToDelete) {
