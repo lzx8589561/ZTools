@@ -327,6 +327,19 @@ export class InternalPluginAPI {
       }
     )
 
+    // 通知主渲染进程更新亚克力透明度
+    ipcMain.handle(
+      'internal:update-acrylic-opacity',
+      async (event, lightOpacity: number, darkOpacity: number) => {
+        if (!requireInternalPlugin(this.pluginManager, event)) {
+          throw new PermissionDeniedError('internal:update-acrylic-opacity')
+        }
+        // 广播到主渲染进程
+        this.mainWindow?.webContents.send('update-acrylic-opacity', { lightOpacity, darkOpacity })
+        return { success: true }
+      }
+    )
+
     ipcMain.on('internal:get-platform', (event) => {
       if (!requireInternalPlugin(this.pluginManager, event)) {
         event.returnValue = null

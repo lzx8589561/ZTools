@@ -403,6 +403,9 @@ window.ztools = {
     // 通知主渲染进程更新主题色
     updatePrimaryColor: async (primaryColor, customColor) =>
       await electron.ipcRenderer.invoke('internal:update-primary-color', primaryColor, customColor),
+    // 通知主渲染进程更新亚克力透明度
+    updateAcrylicOpacity: async (lightOpacity, darkOpacity) =>
+      await electron.ipcRenderer.invoke('internal:update-acrylic-opacity', lightOpacity, darkOpacity),
 
     // 监听窗口材质更新
     onUpdateWindowMaterial: (callback) => {

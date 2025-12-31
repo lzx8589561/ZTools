@@ -208,6 +208,9 @@ declare global {
         callback: (data: { primaryColor: string; customColor?: string }) => void
       ) => void
       onUpdateWindowMaterial?: (callback: (material: 'mica' | 'acrylic' | 'none') => void) => void
+      onUpdateAcrylicOpacity?: (
+        callback: (data: { lightOpacity: number; darkOpacity: number }) => void
+      ) => void
       // 软件更新
       updater: {
         checkUpdate: () => Promise<{

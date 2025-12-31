@@ -137,6 +137,11 @@ const api = {
   onUpdateWindowMaterial: (callback: (material: 'mica' | 'none') => void) => {
     ipcRenderer.on('update-window-material', (_event, material) => callback(material))
   },
+  onUpdateAcrylicOpacity: (
+    callback: (data: { lightOpacity: number; darkOpacity: number }) => void
+  ) => {
+    ipcRenderer.on('update-acrylic-opacity', (_event, data) => callback(data))
+  },
   onIpcLaunch: (
     callback: (options: {
       path: string

@@ -113,6 +113,41 @@
       </div>
     </div>
 
+    <!-- 亚克力材质背景色透明度设置（仅在亚克力材质时显示） -->
+    <div v-if="platform === 'win32' && windowMaterial === 'acrylic'" class="setting-item">
+      <div class="setting-label">
+        <span>明亮模式背景色透明度</span>
+        <span class="setting-desc">调整亚克力材质在明亮模式下的白色背景叠加透明度</span>
+      </div>
+      <div class="setting-control opacity-control">
+        <Slider
+          v-model="acrylicLightOpacity"
+          :min="0"
+          :max="100"
+          :step="1"
+          :formatter="(value) => `${value}%`"
+          @change="handleAcrylicLightOpacityChange"
+        />
+      </div>
+    </div>
+
+    <div v-if="platform === 'win32' && windowMaterial === 'acrylic'" class="setting-item">
+      <div class="setting-label">
+        <span>暗黑模式背景色透明度</span>
+        <span class="setting-desc">调整亚克力材质在暗黑模式下的黑色背景叠加透明度</span>
+      </div>
+      <div class="setting-control opacity-control">
+        <Slider
+          v-model="acrylicDarkOpacity"
+          :min="0"
+          :max="100"
+          :step="1"
+          :formatter="(value) => `${value}%`"
+          @change="handleAcrylicDarkOpacityChange"
+        />
+      </div>
+    </div>
+
     <!-- 搜索框提示文字设置 -->
     <div class="setting-item">
       <div class="setting-label">
@@ -339,6 +374,10 @@ const launchAtLogin = ref(false)
 
 // 窗口材质设置
 const windowMaterial = ref<'mica' | 'acrylic' | 'none'>('none')
+
+// 亚克力材质背景色透明度
+const acrylicLightOpacity = ref(78) // 明亮模式默认 78%
+const acrylicDarkOpacity = ref(50) // 暗黑模式默认 50%
 
 // 颜色选择器引用
 const colorPickerInput = ref<HTMLInputElement | null>(null)
@@ -598,8 +637,75 @@ async function handleWindowMaterialChange(): Promise<void> {
     await window.ztools.internal.setWindowMaterial(windowMaterial.value)
     // 设置插件自己也需要更新 data-material 属性
     document.documentElement.setAttribute('data-material', windowMaterial.value)
+    // 应用亚克力背景色叠加效果
+    applyAcrylicOverlay()
   } catch (error) {
     console.error('更新窗口材质失败:', error)
+  }
+}
+
+// 处理亚克力明亮模式透明度变化
+async function handleAcrylicLightOpacityChange(): Promise<void> {
+  try {
+    await saveSettings()
+    // 通知主渲染进程更新
+    await window.ztools.internal.updateAcrylicOpacity(acrylicLightOpacity.value, acrylicDarkOpacity.value)
+    // 应用亚克力背景色叠加效果
+    applyAcrylicOverlay()
+  } catch (error) {
+    console.error('更新亚克力明亮模式透明度失败:', error)
+  }
+}
+
+// 处理亚克力暗黑模式透明度变化
+async function handleAcrylicDarkOpacityChange(): Promise<void> {
+  try {
+    await saveSettings()
+    // 通知主渲染进程更新
+    await window.ztools.internal.updateAcrylicOpacity(acrylicLightOpacity.value, acrylicDarkOpacity.value)
+    // 应用亚克力背景色叠加效果
+    applyAcrylicOverlay()
+  } catch (error) {
+    console.error('更新亚克力暗黑模式透明度失败:', error)
+  }
+}
+
+// 应用亚克力背景色叠加效果
+function applyAcrylicOverlay(): void {
+  // 移除旧的样式
+  const existingStyle = document.getElementById('acrylic-overlay-style')
+  if (existingStyle) {
+    existingStyle.remove()
+  }
+
+  // 只在亚克力材质时添加样式
+  if (windowMaterial.value === 'acrylic') {
+    const style = document.createElement('style')
+    style.id = 'acrylic-overlay-style'
+    style.textContent = `
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      /* 明亮模式 */
+      @media (prefers-color-scheme: light) {
+        body::after {
+          background: rgb(255 255 255 / ${acrylicLightOpacity.value}%);
+        }
+      }
+
+      /* 暗黑模式 */
+      @media (prefers-color-scheme: dark) {
+        body::after {
+          background: rgb(0 0 0 / ${acrylicDarkOpacity.value}%);
+        }
+      }
+    `
+    document.head.appendChild(style)
   }
 }
 
@@ -827,6 +933,8 @@ async function loadSettings(): Promise<void> {
       theme.value = data.theme ?? 'system'
       primaryColor.value = data.primaryColor ?? 'blue'
       windowMaterial.value = data.windowMaterial ?? 'none'
+      acrylicLightOpacity.value = data.acrylicLightOpacity ?? 78
+      acrylicDarkOpacity.value = data.acrylicDarkOpacity ?? 50
 
       // 加载自定义颜色
       if (data.customColor) {
@@ -841,6 +949,9 @@ async function loadSettings(): Promise<void> {
       if (primaryColor.value === 'custom') {
         applyCustomColor(customColor.value)
       }
+
+      // 应用亚克力背景色叠加效果
+      applyAcrylicOverlay()
     }
 
     // 获取当前实际注册的快捷键
@@ -874,7 +985,9 @@ async function saveSettings(): Promise<void> {
       primaryColor: primaryColor.value,
       customColor: customColor.value,
       showTrayIcon: showTrayIcon.value,
-      windowMaterial: windowMaterial.value
+      windowMaterial: windowMaterial.value,
+      acrylicLightOpacity: acrylicLightOpacity.value,
+      acrylicDarkOpacity: acrylicDarkOpacity.value
     })
   } catch (error) {
     console.error('保存设置失败:', error)

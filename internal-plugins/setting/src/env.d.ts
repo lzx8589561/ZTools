@@ -113,6 +113,7 @@ declare global {
         setWindowMaterial: (material: 'mica' | 'acrylic' | 'none') => Promise<{ success: boolean }>
         getWindowMaterial: () => Promise<'mica' | 'acrylic' | 'none'>
         onUpdateWindowMaterial: (callback: (material: 'mica' | 'acrylic' | 'none') => void) => void
+        updateAcrylicOpacity: (lightOpacity: number, darkOpacity: number) => Promise<void>
         updatePlaceholder: (placeholder: string) => Promise<void>
         selectAvatar: () => Promise<{ success: boolean; path?: string; error?: string }>
         updateAvatar: (avatar: string) => Promise<void>

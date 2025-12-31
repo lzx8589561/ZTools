@@ -57,6 +57,10 @@ export const useWindowStore = defineStore('window', () => {
   const primaryColor = ref('blue') // blue, purple, green, orange, red, pink, custom
   const customColor = ref('#db2777') // 自定义颜色
 
+  // 亚克力材质背景色透明度（0-100）
+  const acrylicLightOpacity = ref(78) // 明亮模式默认 78%
+  const acrylicDarkOpacity = ref(50) // 暗黑模式默认 50%
+
   // 更新下载状态
   const updateDownloadInfo = ref<UpdateDownloadInfo>({ hasDownloaded: false })
 
@@ -150,6 +154,14 @@ export const useWindowStore = defineStore('window', () => {
     if (primaryColor.value === 'custom') {
       applyCustomColor(color)
     }
+  }
+
+  function updateAcrylicLightOpacity(value: number): void {
+    acrylicLightOpacity.value = value
+  }
+
+  function updateAcrylicDarkOpacity(value: number): void {
+    acrylicDarkOpacity.value = value
   }
 
   function applyCustomColor(color: string): void {
@@ -405,6 +417,12 @@ export const useWindowStore = defineStore('window', () => {
           // 默认蓝色
           updatePrimaryColor('blue')
         }
+        if (data.acrylicLightOpacity !== undefined) {
+          acrylicLightOpacity.value = data.acrylicLightOpacity
+        }
+        if (data.acrylicDarkOpacity !== undefined) {
+          acrylicDarkOpacity.value = data.acrylicDarkOpacity
+        }
       } else {
         // 默认蓝色
         updatePrimaryColor('blue')
@@ -433,6 +451,8 @@ export const useWindowStore = defineStore('window', () => {
     theme,
     primaryColor,
     customColor,
+    acrylicLightOpacity,
+    acrylicDarkOpacity,
     updateDownloadInfo,
     updateWindowInfo,
     isFinder,
@@ -446,6 +466,8 @@ export const useWindowStore = defineStore('window', () => {
     updateTheme,
     updatePrimaryColor,
     updateCustomColor,
+    updateAcrylicLightOpacity,
+    updateAcrylicDarkOpacity,
     getAutoPasteTimeLimit,
     getAutoClearTimeLimit,
     shouldClearSearch,
