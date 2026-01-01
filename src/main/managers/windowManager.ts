@@ -550,14 +550,6 @@ class WindowManager {
     // 发送给主窗口
     this.mainWindow?.webContents.send('update-window-material', material)
 
-    // 发送给所有缓存的插件视图
-    const allPluginViews = pluginManager.getAllPluginViews()
-    for (const pluginViewInfo of allPluginViews) {
-      if (!pluginViewInfo.view.webContents.isDestroyed()) {
-        pluginViewInfo.view.webContents.send('update-window-material', material)
-      }
-    }
-
     // 发送给所有分离窗口
     detachedWindowManager.updateAllWindowsMaterial(material)
   }
@@ -596,17 +588,10 @@ class WindowManager {
 
       this.applyMaterial(material)
 
-      // 广播初始状态（延迟确保渲染进程已准备好）
-      setTimeout(() => {
-        this.broadcastWindowMaterial(material)
-      }, 100)
     } catch (error) {
       console.error('读取窗口材质配置失败，使用默认值:', error)
       const defaultMaterial = getDefaultWindowMaterial()
       this.applyMaterial(defaultMaterial)
-      setTimeout(() => {
-        this.broadcastWindowMaterial(defaultMaterial)
-      }, 100)
     }
   }
 
