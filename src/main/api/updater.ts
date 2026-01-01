@@ -5,6 +5,7 @@ import AdmZip from 'adm-zip'
 import { getLanzouDownloadLink, getLanzouFolderFileList } from '../utils/lanzou.js'
 import { downloadFile } from '../utils/download.js'
 import { spawn } from 'child_process'
+import { execWithElevation } from '../utils/elevation.js'
 
 /**
  * 更新路径配置
@@ -259,13 +260,26 @@ export class UpdaterAPI {
 
     console.log('启动升级程序:', paths.updaterPath, args)
 
-    // 启动 updater
-    const subprocess = spawn(paths.updaterPath, args, {
-      detached: true,
-      stdio: 'ignore'
-    })
+    const isWin = process.platform === 'win32'
 
-    subprocess.unref()
+    if (isWin) {
+      // Windows 平台：使用提权执行（需要管理员权限替换 app.asar）
+      try {
+        await execWithElevation(paths.updaterPath, args, false)
+        console.log('Windows 升级程序已启动（提权模式）')
+      } catch (error) {
+        console.error('启动升级程序失败:', error)
+        throw error
+      }
+    } else {
+      // macOS 平台：使用 spawn detached
+      const subprocess = spawn(paths.updaterPath, args, {
+        detached: true,
+        stdio: 'ignore'
+      })
+      subprocess.unref()
+      console.log('macOS 升级程序已启动')
+    }
 
     // 退出应用
     console.log('应用即将退出进行更新...')

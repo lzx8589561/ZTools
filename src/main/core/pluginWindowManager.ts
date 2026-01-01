@@ -108,7 +108,7 @@ class PluginWindowManager {
    */
   public sendToParent(senderWebContents: Electron.WebContents, channel: string, args: any[]): void {
     // 查找包含该 webContents 的窗口信息
-    for (const windowInfo of this.windowInfoMap.values()) {
+    for (const windowInfo of Array.from(this.windowInfoMap.values())) {
       if (windowInfo.window.webContents === senderWebContents) {
         const parent = windowInfo.parentWebContents
         if (parent && !parent.isDestroyed()) {
@@ -278,7 +278,7 @@ class PluginWindowManager {
    * 根据 webContentsId 获取插件路径
    */
   public getPluginPathByWebContentsId(webContentsId: number): string | null {
-    for (const windowInfo of this.windowInfoMap.values()) {
+    for (const windowInfo of Array.from(this.windowInfoMap.values())) {
       if (!windowInfo.window.isDestroyed() && windowInfo.window.webContents.id === webContentsId) {
         return windowInfo.pluginPath
       }
@@ -290,7 +290,7 @@ class PluginWindowManager {
    * 根据 webContentsId 获取插件名称
    */
   public getPluginNameByWebContentsId(webContentsId: number): string | null {
-    for (const windowInfo of this.windowInfoMap.values()) {
+    for (const windowInfo of Array.from(this.windowInfoMap.values())) {
       if (!windowInfo.window.isDestroyed() && windowInfo.window.webContents.id === webContentsId) {
         return windowInfo.pluginName
       }
@@ -305,7 +305,7 @@ class PluginWindowManager {
     const windowIdsToClose: string[] = []
 
     // 查找属于该插件的所有窗口
-    for (const [windowId, windowInfo] of this.windowInfoMap.entries()) {
+    for (const [windowId, windowInfo] of Array.from(this.windowInfoMap.entries())) {
       if (windowInfo.pluginPath === pluginPath) {
         windowIdsToClose.push(windowId)
       }
@@ -326,7 +326,7 @@ class PluginWindowManager {
    * 关闭所有窗口
    */
   public closeAll(): void {
-    for (const windowInfo of this.windowInfoMap.values()) {
+    for (const windowInfo of Array.from(this.windowInfoMap.values())) {
       if (!windowInfo.window.isDestroyed()) {
         windowInfo.window.close()
       }
