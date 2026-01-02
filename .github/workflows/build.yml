@@ -50,15 +50,11 @@ jobs:
       - name: Build and Package (macOS)
         if: matrix.os == 'macos-latest'
         run: pnpm run build:mac
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Windows 构建
       - name: Build and Package (Windows)
         if: matrix.os == 'windows-latest'
         run: pnpm run build:win
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # 上传平台产物（只上传指定文件类型）
       - name: Upload build artifacts
