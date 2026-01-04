@@ -7,9 +7,11 @@ import { pluginFeatureAPI } from './feature'
  */
 export class PluginRedirectAPI {
   private mainWindow: Electron.BrowserWindow | null = null
+  private pluginManager: any = null
 
-  public init(mainWindow: Electron.BrowserWindow): void {
+  public init(mainWindow: Electron.BrowserWindow, pluginManager: any): void {
     this.mainWindow = mainWindow
+    this.pluginManager = pluginManager
     this.setupIPC()
   }
 
@@ -31,6 +33,14 @@ export class PluginRedirectAPI {
   }
 
   private async processRedirect(label: string | [string, string], payload?: any): Promise<void> {
+    console.log('processRedirect', label, payload)
+
+    // 检查 payload 类型：只支持字符串类型（用于 regex 或 over 类型的匹配指令）
+    if (payload !== undefined && payload !== null && typeof payload !== 'string') {
+      console.log('暂不支持非字符串类型的 payload:', typeof payload, payload)
+      return
+    }
+
     try {
       const plugins = await databaseAPI.dbGet('plugins')
       if (!plugins || !Array.isArray(plugins)) {
@@ -79,7 +89,7 @@ export class PluginRedirectAPI {
         this.launchPlugin(targetPlugin, targetFeature, targetCmdName, payload)
       } else {
         // "指令名称" - 查找所有匹配的插件
-        const matches: Array<{ plugin: any; feature: any; cmdName: string }> = []
+        const matches: Array<{ plugin: any; feature: any; cmdName: string; type?: string }> = []
         const cmdName = label
 
         // 判断 payload 是否为空
@@ -105,13 +115,18 @@ export class PluginRedirectAPI {
                       })
                     }
                   } else {
-                    // payload 不为空，只查找 matching cmds (object)
+                    // payload 不为空（字符串类型），只查找 regex 或 over 类型的 matching cmds
                     if (typeof cmd !== 'string') {
-                      matches.push({
-                        plugin,
-                        feature,
-                        cmdName: cmdLabel
-                      })
+                      const cmdType = cmd.type
+                      // 只匹配 regex 或 over 类型（排除 img、files 等）
+                      if (cmdType === 'regex' || cmdType === 'over') {
+                        matches.push({
+                          plugin,
+                          feature,
+                          cmdName: cmdLabel,
+                          type: cmdType
+                        })
+                      }
                     }
                   }
                 }
@@ -129,8 +144,12 @@ export class PluginRedirectAPI {
 
         if (matches.length === 1) {
           // 只有一个匹配，直接打开
-          const { plugin, feature, cmdName: matchCmdName } = matches[0]
-          this.launchPlugin(plugin, feature, matchCmdName, payload)
+          const { plugin, feature, cmdName: matchCmdName, type } = matches[0]
+          console.log('重定向启动插件', matches[0])
+          this.launchPlugin(plugin, feature, matchCmdName, {
+            payload,
+            type: type
+          })
         } else {
           // 多个匹配，跳转到搜索页
           this.redirectSearch(cmdName, payload)
@@ -143,13 +162,14 @@ export class PluginRedirectAPI {
     }
   }
 
-  private launchPlugin(plugin: any, feature: any, cmdName: string, payload: any): void {
+  private launchPlugin(plugin: any, feature: any, cmdName: string, param: any): void {
     const launchOptions = {
       path: plugin.path,
       type: 'plugin' as const,
       featureCode: feature.code,
       name: cmdName,
-      param: payload // 直接把 payload 作为 param 传递，需要在 appsAPI 中处理
+      cmdType: param.type,
+      param: param
     }
     console.log('跳转可以直接打开插件:', launchOptions)
 
@@ -159,6 +179,16 @@ export class PluginRedirectAPI {
 
   private redirectSearch(cmdName: string, payload: any): void {
     console.log('跳转到搜索页:', { cmdName, payload })
+
+    // 先返回主页面
+    if (this.pluginManager?.getCurrentPluginPath() !== null) {
+      console.log('检测到插件正在显示，先隐藏插件并返回搜索页')
+      this.pluginManager.hidePluginView()
+      // 通知渲染进程返回搜索页面
+      this.mainWindow?.webContents.send('back-to-search')
+    }
+
+    // 然后再发送跳转搜索的事件
     this.mainWindow?.webContents.send('redirect-search', {
       cmdName,
       payload

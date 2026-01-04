@@ -273,28 +273,30 @@ export class AppsAPI {
           // 从param中提取完整的输入状态
           const inputState = param.inputState || {}
 
-          // 保存上次匹配状态（内存+数据库）
-          this.lastMatchState = {
-            searchQuery: inputState.searchQuery || '',
-            pastedImage: inputState.pastedImage || null,
-            pastedFiles: inputState.pastedFiles || null,
-            pastedText: inputState.pastedText || null,
-            timestamp: Date.now()
+          if (param.inputState) {
+            // 保存上次匹配状态（内存+数据库）
+            this.lastMatchState = {
+              searchQuery: inputState.searchQuery || '',
+              pastedImage: inputState.pastedImage || null,
+              pastedFiles: inputState.pastedFiles || null,
+              pastedText: inputState.pastedText || null,
+              timestamp: Date.now()
+            }
+            console.log('保存上次匹配状态:', this.lastMatchState)
+            // 持久化到数据库
+            await this.saveLastMatchState()
+
+            // 先删除历史记录中旧的"上次匹配"
+            await this.removeFromHistory('special:last-match')
+
+            // 将"上次匹配"作为普通指令加入历史记录
+            await this.addToHistory({
+              path: 'special:last-match',
+              type: 'plugin',
+              name: '上次匹配',
+              cmdType: 'text'
+            })
           }
-          console.log('保存上次匹配状态:', this.lastMatchState)
-          // 持久化到数据库
-          await this.saveLastMatchState()
-
-          // 先删除历史记录中旧的"上次匹配"
-          await this.removeFromHistory('special:last-match')
-
-          // 将"上次匹配"作为普通指令加入历史记录
-          await this.addToHistory({
-            path: 'special:last-match',
-            type: 'plugin',
-            name: '上次匹配',
-            cmdType: 'text'
-          })
         } else {
           // 非匹配指令，正常添加到历史记录
           await this.addToHistory({ path: appPath, type, featureCode, param, name, cmdType })

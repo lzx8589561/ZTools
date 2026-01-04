@@ -70,7 +70,7 @@ class APIManager {
     pluginScreenAPI.init(mainWindow)
     pluginInputAPI.init(pluginManager)
     pluginShellAPI.init()
-    pluginRedirectAPI.init(mainWindow)
+    pluginRedirectAPI.init(mainWindow, pluginManager)
     pluginFeatureAPI.init(pluginManager)
     pluginHttpAPI.init(pluginManager)
 
