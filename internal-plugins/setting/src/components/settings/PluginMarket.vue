@@ -118,6 +118,7 @@
         @open="handleOpenPlugin(selectedPlugin)"
         @download="downloadPlugin(selectedPlugin)"
         @upgrade="handleUpgradePlugin(selectedPlugin)"
+        @uninstall="handleUninstallPlugin(selectedPlugin)"
       />
     </Transition>
   </div>
@@ -331,6 +332,39 @@ async function downloadPlugin(plugin: Plugin): Promise<void> {
     error(`安装出错: ${err.message}`)
   } finally {
     installingPlugin.value = null
+  }
+}
+
+async function handleUninstallPlugin(plugin: Plugin): Promise<void> {
+  if (!plugin.path) {
+    error('无法卸载：找不到插件路径')
+    return
+  }
+
+  try {
+    console.log('开始卸载插件:', plugin.name)
+    const deleteResult = await window.ztools.internal.deletePlugin(plugin.path)
+    if (!deleteResult.success) {
+      error(`卸载失败: ${deleteResult.error}`)
+      return
+    }
+
+    success('插件卸载成功')
+    console.log('插件卸载成功:', plugin.name)
+
+    // 更新状态
+    plugin.installed = false
+    plugin.localVersion = undefined
+    plugin.path = undefined
+
+    // 关闭详情页面
+    closePluginDetail()
+
+    // 刷新列表
+    await fetchPlugins()
+  } catch (err: any) {
+    console.error('卸载出错:', err)
+    error(`卸载出错: ${err.message}`)
   }
 }
 

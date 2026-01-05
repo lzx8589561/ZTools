@@ -176,6 +176,7 @@
         :plugin="selectedPlugin"
         @back="closePluginDetail"
         @open="handleOpenPlugin(selectedPlugin)"
+        @uninstall="handleUninstallFromDetail(selectedPlugin)"
       />
     </Transition>
   </div>
@@ -309,6 +310,30 @@ async function handleDeletePlugin(plugin: any): Promise<void> {
   } catch (err: any) {
     console.error('删除插件失败:', err)
     error(`删除插件失败: ${err.message || '未知错误'}`)
+  } finally {
+    isDeleting.value = false
+  }
+}
+
+// 从详情页面卸载插件
+async function handleUninstallFromDetail(plugin: any): Promise<void> {
+  if (isDeleting.value) return
+
+  isDeleting.value = true
+  try {
+    const result = await window.ztools.internal.deletePlugin(plugin.path)
+    if (result.success) {
+      success('插件卸载成功')
+      // 关闭详情面板
+      closePluginDetail()
+      // 重新加载插件列表
+      await loadPlugins()
+    } else {
+      error(`插件卸载失败: ${result.error}`)
+    }
+  } catch (err: any) {
+    console.error('卸载插件失败:', err)
+    error(`卸载插件失败: ${err.message || '未知错误'}`)
   } finally {
     isDeleting.value = false
   }

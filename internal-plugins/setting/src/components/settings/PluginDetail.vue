@@ -36,7 +36,10 @@
               </div>
               <span v-else>升级到 v{{ plugin.version }}</span>
             </button>
-            <button v-else class="btn btn-md" @click="emit('open')">打开</button>
+            <template v-else>
+              <button class="btn btn-md btn-danger" @click="handleUninstall">卸载</button>
+              <button class="btn btn-md" @click="emit('open')">打开</button>
+            </template>
           </template>
           <button
             v-else
@@ -244,6 +247,7 @@ const emit = defineEmits<{
   (e: 'open'): void
   (e: 'download'): void
   (e: 'upgrade'): void
+  (e: 'uninstall'): void
 }>()
 
 // Tab 状态
@@ -391,6 +395,16 @@ const canUpgrade = computed(() => {
   if (!props.plugin.installed || !props.plugin.localVersion || !props.plugin.version) return false
   return compareVersions(props.plugin.localVersion, props.plugin.version) < 0
 })
+
+// 处理卸载
+function handleUninstall(): void {
+  const confirmed = confirm(
+    `确定要卸载插件"${props.plugin.name}"吗？\n\n卸载后将删除插件文件和相关数据，此操作不可恢复。`
+  )
+  if (confirmed) {
+    emit('uninstall')
+  }
+}
 
 function cmdKey(cmd: any): string {
   if (cmd && typeof cmd === 'object') {
