@@ -171,7 +171,6 @@ function onIconError(_event: Event, app: Command): void {
   // 图标加载失败，标记该应用
   const key = `${app.path}-${app.featureCode || ''}-${app.name}`
   iconErrors.value.add(key)
-  console.warn(`无法加载图标: ${app.name}`)
 }
 
 // 检查图标是否加载失败
