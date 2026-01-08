@@ -505,8 +505,8 @@ class PluginManager {
     // 获取当前窗口宽度
     const [width] = this.mainWindow.getSize()
 
-    // 调整主窗口大小
-    this.mainWindow.setSize(width, totalHeight)
+    // 通过 api.resizeWindow 调整主窗口大小
+    api.resizeWindow(totalHeight)
 
     // 调整插件视图大小
     this.pluginView.setBounds({

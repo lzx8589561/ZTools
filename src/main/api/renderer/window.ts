@@ -83,6 +83,12 @@ export class WindowAPI {
       this.mainWindow.setSize(width, newHeight)
       // 立即禁用 resizable，防止用户手动调整
       this.mainWindow.setResizable(false)
+
+      // 如果当前处于锁定状态，更新锁定的尺寸
+      if (this.lockedSize) {
+        this.lockedSize = { width, height: newHeight }
+        console.log('更新锁定尺寸:', this.lockedSize)
+      }
     }
   }
 
