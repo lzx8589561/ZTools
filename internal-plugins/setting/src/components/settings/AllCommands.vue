@@ -370,10 +370,6 @@ async function loadCommands(): Promise<void> {
     const result = await window.ztools.internal.getCommands()
     commands.value = result.commands
     regexCommands.value = result.regexCommands
-    console.log('加载指令数据成功:', {
-      commands: commands.value.length,
-      regexCommands: regexCommands.value.length
-    })
   } catch (error) {
     console.error('加载指令数据失败:', error)
   }

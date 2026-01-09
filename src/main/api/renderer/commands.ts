@@ -1,9 +1,6 @@
-import { exec } from 'child_process'
-import { createHash } from 'crypto'
 import { app, ipcMain, shell } from 'electron'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { promisify } from 'util'
 import { normalizeIconPath } from '../../common/iconUtils'
 import { launchApp, type ConfirmDialogOptions } from '../../core/commandLauncher'
 import { scanApplications } from '../../core/commandScanner'
@@ -11,11 +8,6 @@ import { pluginFeatureAPI } from '../plugin/feature'
 import databaseAPI from '../shared/database'
 import pluginsAPI from './plugins'
 import { systemSettingsAPI } from './systemSettings'
-
-const execAsync = promisify(exec)
-
-// 图标缓存目录
-const ICON_CACHE_DIR = path.join(app.getPath('userData'), 'icons')
 
 /**
  * 上次匹配状态接口
@@ -109,8 +101,28 @@ export class AppsAPI {
     try {
       const cachedApps = await databaseAPI.dbGet('cached-commands')
       if (cachedApps && Array.isArray(cachedApps) && cachedApps.length > 0) {
-        console.log(`从缓存读取到 ${cachedApps.length} 个应用`)
-        return cachedApps
+        // 检查缓存的图标格式是否为新协议
+        // 只要有一个应用使用了旧的文件路径格式（且不是 .png 结尾的静态资源），就视为旧缓存
+        const hasOldFormat = cachedApps.some(
+          (app) =>
+            app.icon &&
+            !app.icon.startsWith('ztools-icon://') &&
+            !app.icon.startsWith('data:') &&
+            !app.icon.startsWith('http') &&
+            // Windows 上的静态 png 资源除外（通常是手动转换的）
+            !(
+              process.platform === 'win32' &&
+              app.icon.startsWith('file:') &&
+              app.icon.endsWith('.png')
+            )
+        )
+
+        if (hasOldFormat) {
+          console.log('检测到旧格式图标缓存，将重新扫描并更新为 ztools-icon 协议...')
+        } else {
+          console.log(`从缓存读取到 ${cachedApps.length} 个应用`)
+          return cachedApps
+        }
       }
     } catch (error) {
       console.log('读取应用缓存失败，将进行扫描:', error)
@@ -126,42 +138,20 @@ export class AppsAPI {
    */
   private async scanAndCacheApps(): Promise<any[]> {
     const apps = await scanApplications()
-    console.log(`扫描到 ${apps.length} 个应用,开始处理图标...`)
+    console.log(`扫描到 ${apps.length} 个应用`)
 
-    let successCount = 0
-    let failCount = 0
-
-    // 并发处理图标
-    const appsWithIcons = await Promise.all(
-      apps.map(async (app) => {
-        if (!app.icon) {
-          failCount++
-          return { ...app, icon: undefined }
-        }
-
-        const iconPath = await this.iconToCachedPath(app.icon)
-
-        if (iconPath) {
-          successCount++
-          return { ...app, icon: iconPath }
-        } else {
-          failCount++
-          return { ...app, icon: undefined }
-        }
-      })
-    )
-
-    console.log(`图标处理完成: 成功 ${successCount} 个, 失败 ${failCount} 个`)
+    // 注意：windowsScanner 已经在扫描时生成了 ztools-icon:// 协议 URL
+    // 不需要再进行图标提取或文件转换，直接使用扫描结果即可
 
     // 保存到数据库缓存
     try {
-      await databaseAPI.dbPut('cached-commands', appsWithIcons)
+      await databaseAPI.dbPut('cached-commands', apps)
       console.log('应用列表已缓存到数据库')
     } catch (error) {
       console.error('缓存应用列表失败:', error)
     }
 
-    return appsWithIcons
+    return apps
   }
 
   /**
@@ -185,51 +175,6 @@ export class AppsAPI {
   /**
    * 将图标转换为 PNG 并缓存（平台自适应）
    */
-  private async iconToCachedPath(iconPath: string): Promise<string | null> {
-    try {
-      // Windows: 图标已经是 PNG，直接返回 file:/// 路径
-      if (process.platform === 'win32') {
-        // Windows 扫描器已经生成了 PNG 图标，直接使用
-        if (iconPath.endsWith('.png')) {
-          return `file:///${iconPath}`
-        }
-        // 如果不是 PNG（意外情况），尝试复制到缓存目录
-        const hash = createHash('md5').update(iconPath).digest('hex')
-        const cachedFile = path.join(ICON_CACHE_DIR, `${hash}.png`)
-        await fs.mkdir(ICON_CACHE_DIR, { recursive: true })
-        await fs.copyFile(iconPath, cachedFile)
-        return `file:///${cachedFile}`
-      }
-
-      // macOS: 将 ICNS 转换为 PNG
-      const hash = createHash('md5').update(iconPath).digest('hex')
-      const cachedFile = path.join(ICON_CACHE_DIR, `${hash}.png`)
-
-      // 检查缓存是否存在
-      try {
-        await fs.access(cachedFile)
-        // 缓存存在，直接返回 file:/// 协议路径
-        return `file:///${cachedFile}`
-      } catch {
-        // 缓存不存在，需要转换
-      }
-
-      // 确保缓存目录存在
-      await fs.mkdir(ICON_CACHE_DIR, { recursive: true })
-
-      // 使用 sips 转换为 PNG
-      await execAsync(
-        `sips -s format png '${iconPath}' --out '${cachedFile}' --resampleHeightWidth 64 64 2>/dev/null`
-      )
-
-      // 返回 file:/// 协议路径
-      return `file:///${cachedFile}`
-    } catch (error) {
-      console.error('图标转换失败:', iconPath, error)
-      return null
-    }
-  }
-
   /**
    * 启动应用或插件（统一接口）
    */

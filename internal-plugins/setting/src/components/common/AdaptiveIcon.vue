@@ -9,8 +9,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { useColorScheme } from '../../composables/useColorScheme'
+import { computed, onMounted, ref, watch } from 'vue';
+import { useColorScheme } from '../../composables/useColorScheme';
 
 const props = defineProps<{
   src: string
@@ -41,8 +41,7 @@ async function analyzeImage() {
     // 调用主进程的图片分析 API（内置插件专用）
     const result = await window.ztools.internal.analyzeImage(props.src)
     analysisResult.value = result
-  } catch (error) {
-    console.error('[AdaptiveIcon] 图片分析失败:', error)
+  } catch {
     analysisResult.value = null
   } finally {
     isAnalyzing.value = false

@@ -17,7 +17,11 @@ async function analyzeImage(imagePath: string): Promise<ImageAnalysisResult> {
   try {
     // 1. 处理不同格式的图片输入
     let imageBuffer: Buffer
-    if (imagePath.startsWith('data:image/')) {
+    if (imagePath.startsWith('ztools-icon://')) {
+      // 动态生成的应用图标，不做颜色分析，直接返回默认值
+      // 避免尝试作为文件读取导致 ENOENT 错误
+      return { isSimpleIcon: false, mainColor: null, isDark: false, needsAdaptation: false }
+    } else if (imagePath.startsWith('data:image/')) {
       // Base64 格式
       const base64Data = imagePath.split(',')[1]
       imageBuffer = Buffer.from(base64Data, 'base64')

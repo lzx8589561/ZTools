@@ -1,24 +1,10 @@
 import { shell } from 'electron'
-import fs from 'fs'
 import fsPromises from 'fs/promises'
-import os from 'os'
 import path from 'path'
 import { getWindowsStartMenuPaths } from '../../utils/systemPaths'
 import { Command } from './types'
 
-// 动态加载原生模块（避免启动时加载失败）
-let extractFileIcon: ((path: string, size: number) => string) | null = null
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  extractFileIcon = require('extract-file-icon')
-} catch (error) {
-  console.error('加载 extract-file-icon 失败:', error)
-}
-
 // ========== 配置 ==========
-
-// 图标缓存目录
-const iconDir = path.join(os.tmpdir(), 'ProcessIcon')
 
 // 要跳过的文件夹名称
 const SKIP_FOLDERS = [
@@ -54,62 +40,66 @@ const SKIP_EXTENSIONS = [
 
 // 要跳过的快捷方式名称关键词（不区分大小写）
 const SKIP_NAME_PATTERN =
-  /website|网站|帮助|help|readme|read me|文档|manual|license|documentation|uninstall|unin|卸载/i
+  /^uninstall |^卸载|卸载$|website|网站|帮助|help|readme|read me|文档|manual|license|documentation/i
+
+// 要跳过的目标可执行文件名（卸载程序、安装程序等）
+// 卸载程序：uninst.exe, uninstall.exe, uninstaller.exe, UninstallXXX.exe, unins000.exe, unwise.exe, _uninst.exe 等
+// 安装程序：setup.exe, install.exe, installer.exe, InstallXXX.exe, instmsi.exe, instmsiw.exe 等
+// 注意：
+//   - 过滤所有以 "uninstall"/"install" 开头的（包括 Installer.exe, UninstallSpineTrial.exe 等）
+//   - 过滤 "uninst" 开头的（但 "unins" + 数字除外，需要精确匹配）
+//   - 保留配置工具（如 "GameSetup.exe"，不以 setup/install 开头）
+const SKIP_TARGET_PATTERN =
+  /^uninstall|^uninst|^unins\d+$|^unwise|^_uninst|^setup$|^install|^instmsi|卸载程序|安装程序/i
+
+// Windows 系统目录（不应该扫描这些目录中的应用）
+const SYSTEM_DIRECTORIES = [
+  'c:\\windows\\',
+  'c:\\windows\\system32\\',
+  'c:\\windows\\syswow64\\'
+]
 
 // ========== 辅助函数 ==========
 
 // 检查是否应该跳过该快捷方式
+// 优先基于目标文件的真实路径判断，而不是快捷方式名称
 function shouldSkipShortcut(name: string, targetPath?: string): boolean {
-  // 检查名称关键词
-  if (SKIP_NAME_PATTERN.test(name)) {
-    return true
+  // 如果有目标路径，优先检查目标文件
+  if (targetPath) {
+    const lowerTargetPath = targetPath.toLowerCase()
+
+    // 1. 检查是否在系统目录中（Windows、System32、WindowsApps 等）
+    if (SYSTEM_DIRECTORIES.some((sysDir) => lowerTargetPath.startsWith(sysDir))) {
+      return true
+    }
+
+    // 2. 检查目标文件扩展名（文档、网页等非可执行文件）
+    if (SKIP_EXTENSIONS.some((ext) => lowerTargetPath.endsWith(ext))) {
+      return true
+    }
+
+    // 3. 检查目标文件的文件名（uninst.exe, uninstall.exe, setup.exe 等）
+    const targetFileName = path.basename(targetPath, path.extname(targetPath))
+    if (SKIP_TARGET_PATTERN.test(targetFileName)) {
+      return true
+    }
+
+    // 目标路径检查通过，不过滤
+    return false
   }
 
-  // 检查目标文件扩展名
-  if (targetPath && SKIP_EXTENSIONS.some((ext) => targetPath.toLowerCase().endsWith(ext))) {
+  // 如果没有目标路径（解析失败），降级检查快捷方式名称
+  if (SKIP_NAME_PATTERN.test(name)) {
     return true
   }
 
   return false
 }
 
-// 确保图标目录存在
-async function ensureIconDir(): Promise<void> {
-  try {
-    await fsPromises.mkdir(iconDir, { recursive: true })
-  } catch (error) {
-    console.error('创建图标目录失败:', error)
-  }
-}
-
-// 提取并保存应用图标
-async function extractIcon(appPath: string, appName: string): Promise<string> {
-  // 将不安全的文件名字符替换为下划线，保持可读性
-  const safeFileName = appName.replace(/[<>:"/\\|?*]/g, '_')
-  const iconPath = path.join(iconDir, `${safeFileName}.png`)
-
-  try {
-    // 检查图标是否已存在
-    const exists = fs.existsSync(iconPath)
-    if (exists) {
-      return iconPath
-    }
-
-    // 检查模块是否加载成功
-    if (!extractFileIcon) {
-      return iconPath
-    }
-
-    // 使用 extract-file-icon 提取图标
-    const buffer = extractFileIcon(appPath, 32)
-
-    // 保存图标
-    await fsPromises.writeFile(iconPath, buffer, 'base64')
-    return iconPath
-  } catch (error) {
-    console.error(`提取图标失败 ${appName}:`, error)
-    return iconPath // 返回路径，即使提取失败
-  }
+// 生成图标 URL
+function getIconUrl(appPath: string): string {
+  // 将绝对路径编码为 URL
+  return `ztools-icon://${encodeURIComponent(appPath)}`
 }
 
 // 递归扫描目录中的快捷方式
@@ -139,12 +129,7 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
       // 处理快捷方式
       const appName = path.basename(entry.name, '.lnk')
 
-      // 快速过滤：检查名称关键词（卸载程序、帮助文档等）
-      if (shouldSkipShortcut(appName)) {
-        continue
-      }
-
-      // 尝试解析快捷方式目标
+      // 尝试解析快捷方式目标（必须先解析才能获取真实路径）
       let shortcutDetails: Electron.ShortcutDetails | null = null
       try {
         shortcutDetails = shell.readShortcutLink(fullPath)
@@ -169,18 +154,13 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
         }
       }
 
-      // 二次过滤：检查目标文件扩展名
+      // 过滤检查：基于目标文件的真实路径判断（优先），或快捷方式名称（降级）
       if (shouldSkipShortcut(appName, targetPath)) {
         continue
       }
 
-      // 提取图标
-      let icon = ''
-      try {
-        icon = await extractIcon(iconPath, appName)
-      } catch (error) {
-        console.error(`提取图标失败 ${appName}:`, error)
-      }
+      // 生成图标 URL
+      const icon = getIconUrl(iconPath)
 
       // 创建应用对象
       const app: Command = {
@@ -199,9 +179,6 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
 export async function scanApplications(): Promise<Command[]> {
   try {
     const startTime = performance.now()
-
-    // 确保图标目录存在
-    await ensureIconDir()
 
     const apps: Command[] = []
 

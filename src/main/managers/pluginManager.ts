@@ -9,6 +9,7 @@ import detachedWindowManager, { DETACHED_TITLEBAR_HEIGHT } from '../core/detache
 import { GLOBAL_SCROLLBAR_CSS } from '../core/globalStyles'
 import { isInternalPlugin } from '../core/internalPlugins'
 import pluginWindowManager from '../core/pluginWindowManager'
+import { registerIconProtocolForSession } from '../index'
 
 console.log('mainPreload', mainPreload)
 
@@ -146,6 +147,11 @@ class PluginManager {
         type: 'frame',
         filePath: mainPreload
       })
+
+      // 如果是内置插件，注册图标协议（外部插件不需要访问应用图标）
+      if (isInternalPlugin(pluginConfig.name)) {
+        registerIconProtocolForSession(sess)
+      }
 
       // 创建 WebContentsView
       this.pluginView = new WebContentsView({
@@ -812,6 +818,11 @@ class PluginManager {
         type: 'frame',
         filePath: mainPreload
       })
+
+      // 如果是内置插件，注册图标协议（外部插件不需要访问应用图标）
+      if (isInternalPlugin(pluginConfig.name)) {
+        registerIconProtocolForSession(sess)
+      }
 
       // 创建 WebContentsView
       const pluginView = new WebContentsView({
